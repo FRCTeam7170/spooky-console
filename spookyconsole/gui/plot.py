@@ -10,7 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import matplotlib.style as mplstyle
 from matplotlib.figure import Figure
 import matplotlib.animation as mplani
-from .core import DockableMixin, DragPoint
+from .core import DockableMixin
 
 
 class LiveUpdater:
@@ -113,7 +113,7 @@ class Plot(tk.Frame):
         self.extra_bar = PlotToolbar(self.frame, self)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         self.extra_bar.pack()
-        self.frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        self.frame.pack(fill=tk.BOTH, expand=True)
 
         self.style = style
         if nrows and ncols:
@@ -125,5 +125,4 @@ class DockablePlot(DockableMixin, Plot):
 
     def __init__(self, master, row_span=9, col_span=9, *args, **kwargs):
         super().__init__(master, row_span, col_span, *args, **kwargs)
-        self.drag_point = DragPoint(self, width=10, height=10)
-        self.drag_point.pack(side=tk.LEFT)
+        self.bind_drag_on(self.extra_bar)

@@ -17,7 +17,6 @@ def build_doc_latex(ctx):
 @invoke.task()
 def compile_latex(ctx):
     with ctx.cd("./doc/_build/latex"):
-        ctx.run("rm ./pdf/* ./auxil/*")
         ctx.run("pdflatex "
                 "-output-format=pdf "
                 "-output-directory=./pdf "

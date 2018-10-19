@@ -80,6 +80,7 @@ class ScrollCanvas(tk.Canvas):
             self.yview_scroll(-1 * int(event.delta * self.scroll_wheel_scale), tk.UNITS)
 
     def _wheel_press(self, event):
+        self.configure(cursor="fleur")
         self._wheel_drag_start_pos = Point(event.x, event.y)
         self._wheel_press_update_view()
 
@@ -90,6 +91,7 @@ class ScrollCanvas(tk.Canvas):
             self._wheel_drag_delta_y = event.y - self._wheel_drag_start_pos.y
 
     def _wheel_release(self, _):
+        self.configure(cursor="left_ptr")
         self._wheel_drag_start_pos = None
         self._wheel_drag_delta_x = 0
         self._wheel_drag_delta_y = 0
@@ -843,6 +845,8 @@ class Window(tk.Toplevel):
 
 class DockableMixin:
 
+    # TODO: Make dockables relay scroll events to grid
+
     def __init__(self, parent_grid, col_span, row_span, *args, **kwargs):
         super().__init__(parent_grid, *args, **kwargs)
 
@@ -850,9 +854,7 @@ class DockableMixin:
         self.col_span = col_span
         self.row_span = row_span
 
-        self.bind("<Button-1>", self.on_drag_start)
-        self.bind("<ButtonRelease-1>", self.on_drag_stop)
-        self.bind("<B1-Motion>", self.on_drag_motion)
+        self.bind_drag_on(self)
 
     def on_drag_start(self, _):
         self.parent_grid.signal_drag_start(self)
@@ -871,42 +873,21 @@ class DockableMixin:
         self.row_span = row_span or self.row_span
         self.parent_grid.dockable_resized(self)
 
-    def disable_binds(self):
-        self.unbind("<Button-1>")
-        self.unbind("<ButtonRelease-1>")
-        self.unbind("<B1-Motion>")
+    def bind_drag_on(self, widget):
+        def patch_event_and_call(event):
+            event.x += widget.winfo_x()
+            event.y += widget.winfo_y()
+            self.on_drag_motion(event)
 
-    def enable_binds(self):
-        self.bind("<Button-1>", self.on_drag_start)
-        self.bind("<ButtonRelease-1>", self.on_drag_stop)
-        self.bind("<B1-Motion>", self.on_drag_motion)
+        widget.bind("<Button-3>", self.on_drag_start)
+        widget.bind("<ButtonRelease-3>", self.on_drag_stop)
+        widget.bind("<B3-Motion>", self.on_drag_motion if widget is self else patch_event_and_call)
 
-
-class DragPoint(tk.Frame):
-
-    def __init__(self, dockable, master=None, unbind_parent=True, *args, **kwargs):
-        super().__init__(master or dockable, *args, **kwargs)
-
-        self.dockable = dockable
-        self.bind("<Button-1>", self.on_drag_start)
-        self.bind("<ButtonRelease-1>", self.on_drag_stop)
-        self.bind("<B1-Motion>", self.on_drag_motion)
-        if unbind_parent:
-            dockable.disable_binds()
-
-    def on_drag_start(self, _):
-        self.dockable.on_drag_start(None)
-
-    def on_drag_stop(self, _):
-        self.dockable.on_drag_stop(None)
-
-    def on_drag_motion(self, event):
-        self.dockable.on_drag_motion(self._fix_event(event))
-
-    def _fix_event(self, event):
-        event.x += self.winfo_x()
-        event.y += self.winfo_y()
-        return event
+    @staticmethod
+    def unbind_drag_on(widget):
+        widget.unbind("<Button-3>")
+        widget.unbind("<ButtonRelease-3>")
+        widget.unbind("<B3-Motion>")
 
 
 class GuiManager:
