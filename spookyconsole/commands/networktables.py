@@ -7,7 +7,7 @@ from collections import namedtuple
 import click
 from networktables.networktables import NetworkTables
 import tabulate
-import ntutils
+from .. import ntutils
 from networktables.instance import NetworkTablesInstance
 
 
@@ -27,7 +27,7 @@ def nt(ctx):
 
 
 @click.command()
-@click.argument("entry", type=ntutils.NTEntryParamType)
+@click.argument("entry", type=ntutils.NT_ENTRY)
 def get(entry):
     return entry.value
 
@@ -39,7 +39,7 @@ def get(entry):
 @click.option("kind", "--boolean-array", flag_value=_BOOLEAN_ARRAY)
 @click.option("kind", "--double-array", flag_value=_DOUBLE_ARRAY)
 @click.option("kind", "--string-array", flag_value=_STRING_ARRAY)
-@click.argument("entry", type=ntutils.NTEntryParamType)
+@click.argument("entry", type=ntutils.NT_ENTRY)
 @click.argument("value")
 @click.pass_context
 def set_(ctx, entry, value, kind):
@@ -70,7 +70,7 @@ def set_(ctx, entry, value, kind):
 
 
 @click.command()
-@click.argument("path", type=ntutils.NTPathParamType)
+@click.argument("path", type=ntutils.NT_PATH)
 @click.pass_context
 def cd(ctx, path):
     ctx.obj["nt_current_path"] = path
@@ -87,7 +87,7 @@ list_aliases = ["ls", "dir"]
 
 
 @click.command("list")
-@click.argument("path", type=ntutils.NTPathParamType, required=False)
+@click.argument("path", type=ntutils.NT_PATH, required=False)
 @click.option("recurse", "--recurse/--no-recurse", "-r/ ", default=False)
 @click.option("output", "--tables", "-t", flag_value="tables")
 @click.option("output", "--entries", "-e", flag_value="entries")

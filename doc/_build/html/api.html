@@ -1,0 +1,764 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>API Reference &#8212; spooky-console  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="spooky-console" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-main">
+<span id="main-module"></span><h2>main Module<a class="headerlink" href="#module-main" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+</div>
+<div class="section" id="module-exceptions">
+<span id="exceptions-module"></span><h2>exceptions Module<a class="headerlink" href="#module-exceptions" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+<dl class="exception">
+<dt id="exceptions.AbortPromptLoop">
+<em class="property">exception </em><code class="descname">AbortPromptLoop</code><a class="reference internal" href="_modules/exceptions.html#AbortPromptLoop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#exceptions.AbortPromptLoop" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="exceptions.TableFormatError">
+<em class="property">exception </em><code class="descname">TableFormatError</code><a class="reference internal" href="_modules/exceptions.html#TableFormatError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#exceptions.TableFormatError" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ntutils">
+<span id="ntutils-module"></span><h2>ntutils Module<a class="headerlink" href="#module-ntutils" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+<dl class="class">
+<dt id="ntutils.BooleanArrayParamType">
+<em class="property">class </em><code class="descclassname">ntutils.</code><code class="descname">BooleanArrayParamType</code><span class="sig-paren">(</span><em>enclosing_chars=''</em>, <em>require_enclosing_chars=False</em>, <em>item_sep_char='</em>, <em>'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ntutils.html#BooleanArrayParamType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ntutils.BooleanArrayParamType" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="ntutils.BooleanArrayParamType.item_hook">
+<code class="descname">item_hook</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ntutils.html#BooleanArrayParamType.item_hook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ntutils.BooleanArrayParamType.item_hook" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called in itemize whenever an item is generated. Allows for user modifications to the item (e.g. casting).
+:param item: The unmodified item string.
+:return: The item after user modification. Defaults to the original, unmodified string.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ntutils.DoubleArrayParamType">
+<em class="property">class </em><code class="descclassname">ntutils.</code><code class="descname">DoubleArrayParamType</code><span class="sig-paren">(</span><em>enclosing_chars=''</em>, <em>require_enclosing_chars=False</em>, <em>item_sep_char='</em>, <em>'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ntutils.html#DoubleArrayParamType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ntutils.DoubleArrayParamType" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="ntutils.DoubleArrayParamType.item_hook">
+<code class="descname">item_hook</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ntutils.html#DoubleArrayParamType.item_hook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ntutils.DoubleArrayParamType.item_hook" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called in itemize whenever an item is generated. Allows for user modifications to the item (e.g. casting).
+:param item: The unmodified item string.
+:return: The item after user modification. Defaults to the original, unmodified string.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ntutils.NTEntryParamType">
+<em class="property">class </em><code class="descclassname">ntutils.</code><code class="descname">NTEntryParamType</code><a class="reference internal" href="_modules/ntutils.html#NTEntryParamType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ntutils.NTEntryParamType" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="ntutils.NTEntryParamType.convert">
+<code class="descname">convert</code><span class="sig-paren">(</span><em>value</em>, <em>param</em>, <em>ctx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ntutils.html#NTEntryParamType.convert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ntutils.NTEntryParamType.convert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the value.  This is not invoked for values that are
+<cite>None</cite> (the missing value).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ntutils.NTPathParamType">
+<em class="property">class </em><code class="descclassname">ntutils.</code><code class="descname">NTPathParamType</code><a class="reference internal" href="_modules/ntutils.html#NTPathParamType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ntutils.NTPathParamType" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="ntutils.NTPathParamType.convert">
+<code class="descname">convert</code><span class="sig-paren">(</span><em>value</em>, <em>param</em>, <em>ctx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ntutils.html#NTPathParamType.convert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ntutils.NTPathParamType.convert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the value.  This is not invoked for values that are
+<cite>None</cite> (the missing value).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ntutils.NTTableParamType">
+<em class="property">class </em><code class="descclassname">ntutils.</code><code class="descname">NTTableParamType</code><a class="reference internal" href="_modules/ntutils.html#NTTableParamType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ntutils.NTTableParamType" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="ntutils.NTTableParamType.convert">
+<code class="descname">convert</code><span class="sig-paren">(</span><em>value</em>, <em>param</em>, <em>ctx</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ntutils.html#NTTableParamType.convert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ntutils.NTTableParamType.convert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the value.  This is not invoked for values that are
+<cite>None</cite> (the missing value).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-utils">
+<span id="utils-module"></span><h2>utils Module<a class="headerlink" href="#module-utils" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+<dl class="function">
+<dt id="utils.find_nth">
+<code class="descclassname">utils.</code><code class="descname">find_nth</code><span class="sig-paren">(</span><em>haystack</em>, <em>needle</em>, <em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/utils.html#find_nth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#utils.find_nth" title="Permalink to this definition">¶</a></dt>
+<dd><p>From StackOverflow.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-gui.core">
+<span id="gui-core-module"></span><h2>gui.core Module<a class="headerlink" href="#module-gui.core" title="Permalink to this headline">¶</a></h2>
+<p>Core functionality for the GUI component of spooky-console.</p>
+<dl class="class">
+<dt id="gui.core.BBox">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">BBox</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>w</em>, <em>h</em><span class="sig-paren">)</span><a class="headerlink" href="#gui.core.BBox" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="gui.core.BBox.h">
+<code class="descname">h</code><a class="headerlink" href="#gui.core.BBox.h" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.BBox.w">
+<code class="descname">w</code><a class="headerlink" href="#gui.core.BBox.w" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.BBox.x">
+<code class="descname">x</code><a class="headerlink" href="#gui.core.BBox.x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.BBox.y">
+<code class="descname">y</code><a class="headerlink" href="#gui.core.BBox.y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.core.Cell">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">Cell</code><span class="sig-paren">(</span><em>column</em>, <em>row</em><span class="sig-paren">)</span><a class="headerlink" href="#gui.core.Cell" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="gui.core.Cell.column">
+<code class="descname">column</code><a class="headerlink" href="#gui.core.Cell.column" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.Cell.row">
+<code class="descname">row</code><a class="headerlink" href="#gui.core.Cell.row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.core.DockableEntry">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">DockableEntry</code><span class="sig-paren">(</span><em>id</em>, <em>cell</em><span class="sig-paren">)</span><a class="headerlink" href="#gui.core.DockableEntry" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="gui.core.DockableEntry.cell">
+<code class="descname">cell</code><a class="headerlink" href="#gui.core.DockableEntry.cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.DockableEntry.id">
+<code class="descname">id</code><a class="headerlink" href="#gui.core.DockableEntry.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.core.DragPoint">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">DragPoint</code><span class="sig-paren">(</span><em>dockable</em>, <em>master=None</em>, <em>unbind_parent=True</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#DragPoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.DragPoint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.core.Grid">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">Grid</code><span class="sig-paren">(</span><em>master</em>, <em>width</em>, <em>height</em>, <em>cell_width=50</em>, <em>cell_height=50</em>, <em>column_padding=0</em>, <em>row_padding=0</em>, <em>resize_protocol=1</em>, <em>highlight_visual=VisualSpec(bd_width=2</em>, <em>bd_colour='#A00000'</em>, <em>fill='#303030')</em>, <em>grid_visual=VisualSpec(bd_width=1</em>, <em>bd_colour='#101010'</em>, <em>fill='#808080')</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO</p>
+<dl class="method">
+<dt id="gui.core.Grid.dockable_resized">
+<code class="descname">dockable_resized</code><span class="sig-paren">(</span><em>dockable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid.dockable_resized"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid.dockable_resized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Signal to this grid that the <code class="docutils literal notranslate"><span class="pre">DockableMixin</span></code> <code class="docutils literal notranslate"><span class="pre">dockable</span></code>’s <code class="docutils literal notranslate"><span class="pre">DockableMixin.col_span</span></code> and/or
+<code class="docutils literal notranslate"><span class="pre">DockableMixin.row_span</span></code> has been changed, and thus it must be redrawn and its position must be recalculated.
+If it must be moved, it will be moved as little as possible. If no where on the grid satisfies its new size, the
+grid is expanded horizontally as needed to accommodate the <code class="docutils literal notranslate"><span class="pre">dockable</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dockable</strong> (<em>DockableMixin</em>) – The dockable that has been resized.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.Grid.geometry">
+<code class="descname">geometry</code><em class="property"> = None</em><a class="headerlink" href="#gui.core.Grid.geometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>The grid’s current <code class="docutils literal notranslate"><span class="pre">GridGeometry</span></code>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.Grid.grid_visual">
+<code class="descname">grid_visual</code><em class="property"> = None</em><a class="headerlink" href="#gui.core.Grid.grid_visual" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current <code class="docutils literal notranslate"><span class="pre">VisualSpec</span></code> for the grid drawn while a <code class="docutils literal notranslate"><span class="pre">DockableMixin</span></code> is dragged.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.Grid.highlight_visual">
+<code class="descname">highlight_visual</code><em class="property"> = None</em><a class="headerlink" href="#gui.core.Grid.highlight_visual" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current <code class="docutils literal notranslate"><span class="pre">VisualSpec</span></code> for the highlighting effect.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.core.Grid.move_dockable">
+<code class="descname">move_dockable</code><span class="sig-paren">(</span><em>dockable</em>, <em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid.move_dockable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid.move_dockable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move the given <code class="docutils literal notranslate"><span class="pre">DockableMixin</span></code> <code class="docutils literal notranslate"><span class="pre">dockable</span></code> to the given <code class="docutils literal notranslate"><span class="pre">Cell</span></code> <code class="docutils literal notranslate"><span class="pre">cell</span></code>. If there is a grid conflict, this
+will fail and no changes will be made.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dockable</strong> (<em>DockableMixin</em>) – The dockable to move.</li>
+<li><strong>cell</strong> (<a class="reference internal" href="#gui.core.Cell" title="gui.core.Cell"><em>Cell</em></a>) – The cell to move the dockable to.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Whether or not the move was successful.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.Grid.orig_geometry">
+<code class="descname">orig_geometry</code><em class="property"> = None</em><a class="headerlink" href="#gui.core.Grid.orig_geometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores the geometry (as a <code class="docutils literal notranslate"><span class="pre">GridGeometry</span></code>) before any changes from window resizing are made.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.core.Grid.register_dockable">
+<code class="descname">register_dockable</code><span class="sig-paren">(</span><em>dockable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid.register_dockable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid.register_dockable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a <code class="docutils literal notranslate"><span class="pre">DockableMixin</span></code> to be managed by this grid. Its tkinter parent must already be this grid.</p>
+<p>Registered dockables should never be manually (i.e. <code class="docutils literal notranslate"><span class="pre">dockable.configure(...)</span></code>) positioned, have their width
+and height manually changed, etcetera. Instead use the appropriate methods on <code class="docutils literal notranslate"><span class="pre">DockableMixin</span></code> objects.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dockable</strong> (<em>DockableMixin</em>) – The dockable to be managed by this grid.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.core.Grid.remove_dockable">
+<code class="descname">remove_dockable</code><span class="sig-paren">(</span><em>dockable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid.remove_dockable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid.remove_dockable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the given <code class="docutils literal notranslate"><span class="pre">DockableMixin</span></code> <code class="docutils literal notranslate"><span class="pre">dockable</span></code> from the grid. This method is functionally the opposite of
+<code class="docutils literal notranslate"><span class="pre">Grid._place_dockable</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dockable</strong> (<em>DockableMixin</em>) – The dockable to remove.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.Grid.resize_protocol">
+<code class="descname">resize_protocol</code><em class="property"> = None</em><a class="headerlink" href="#gui.core.Grid.resize_protocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer representing the protocol to employ when the parent window is resized such that the grid’s canvas is
+granted more space than required by its current scrollregion.</p>
+<dl class="docutils">
+<dt>May be one of the following:</dt>
+<dd><ul class="first last simple">
+<li><code class="docutils literal notranslate"><span class="pre">Grid.RESIZE_PROTO_NONE</span></code>: Do nothing when the window is resized.</li>
+<li><code class="docutils literal notranslate"><span class="pre">Grid.RESIZE_PROTO_EXPAND_CELLS</span></code>: Expand each cell equally to fit any new space when the window is            resized.</li>
+<li><code class="docutils literal notranslate"><span class="pre">Grid.RESIZE_PROTO_ADD_PADDING</span></code>: Add padding equally in between each column or row when the window            is resized.</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.core.Grid.set_geometry">
+<code class="descname">set_geometry</code><span class="sig-paren">(</span><em>width=None</em>, <em>height=None</em>, <em>cell_width=None</em>, <em>cell_height=None</em>, <em>column_padding=None</em>, <em>row_padding=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid.set_geometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid.set_geometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request the grid’s geometry (<code class="docutils literal notranslate"><span class="pre">Grid.geometry</span></code>) to be changed.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">cell_width</span></code> and <code class="docutils literal notranslate"><span class="pre">cell_height</span></code> have minimums, and, in the event that a requested change to them
+violates these minimums, they will be clamped greater than the minimums. The minimums are
+<code class="docutils literal notranslate"><span class="pre">Grid.MIN_CELL_WIDTH</span></code> and <code class="docutils literal notranslate"><span class="pre">Grid.MIN_CELL_HEIGHT</span></code>.</p>
+<p>Also, <code class="docutils literal notranslate"><span class="pre">width</span></code> and <code class="docutils literal notranslate"><span class="pre">height</span></code> cannot be changed so as to “clip off” any <code class="docutils literal notranslate"><span class="pre">DockableMixin``s</span> <span class="pre">on</span> <span class="pre">the</span> <span class="pre">grid.</span>
+<span class="pre">Therefore,</span> <span class="pre">once</span> <span class="pre">again,</span> <span class="pre">the</span> <span class="pre">``width</span></code> and <code class="docutils literal notranslate"><span class="pre">height</span></code> will be clamped to be greater than the minimum width and
+height of the grid state (<code class="docutils literal notranslate"><span class="pre">GridState.min_width</span></code> and <code class="docutils literal notranslate"><span class="pre">GridState.min_height</span></code>).</p>
+<p>To check if any of the requested new dimensions have been denied, consult the returned <code class="docutils literal notranslate"><span class="pre">GridGeometry</span></code> object,
+which contains the geometries actually deployed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>width</strong> (<em>int</em>) – The new width of the grid, or None for no change.</li>
+<li><strong>height</strong> (<em>int</em>) – The new height of the grid, or None for no change.</li>
+<li><strong>cell_width</strong> (<em>int</em>) – The new cell width of the grid, or None for no change.</li>
+<li><strong>cell_height</strong> (<em>int</em>) – The new cell height of the grid, or None for no change.</li>
+<li><strong>column_padding</strong> (<em>int</em>) – The new column padding of the grid, or None for no change.</li>
+<li><strong>row_padding</strong> (<em>int</em>) – The new row padding of the grid, or None for no change.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The new <code class="docutils literal notranslate"><span class="pre">GridGeometry</span></code> object.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#gui.core.GridGeometry" title="gui.core.GridGeometry">GridGeometry</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.core.Grid.set_grid_visual">
+<code class="descname">set_grid_visual</code><span class="sig-paren">(</span><em>bd_width=None</em>, <em>bd_colour=None</em>, <em>fill=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid.set_grid_visual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid.set_grid_visual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set one or more of the visual aspects of the grid effect.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>bd_width</strong> – The new border width, or None for no change.</li>
+<li><strong>bd_colour</strong> – The new border colour, or None for no change.</li>
+<li><strong>fill</strong> – The new fill colour, or None for no change.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.core.Grid.set_highlight_visual">
+<code class="descname">set_highlight_visual</code><span class="sig-paren">(</span><em>bd_width=None</em>, <em>bd_colour=None</em>, <em>fill=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid.set_highlight_visual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid.set_highlight_visual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set one or more of the visual aspects of the highlighting effect.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>bd_width</strong> – The new border width, or None for no change.</li>
+<li><strong>bd_colour</strong> – The new border colour, or None for no change.</li>
+<li><strong>fill</strong> – The new fill colour, or None for no change.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.core.Grid.set_resize_protocol">
+<code class="descname">set_resize_protocol</code><span class="sig-paren">(</span><em>protocol</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid.set_resize_protocol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid.set_resize_protocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the resize protocol (<code class="docutils literal notranslate"><span class="pre">Grid.resize_protocol</span></code>) to the given one.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>protocol</strong> – The resize protocol to employ.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.core.Grid.signal_drag_motion">
+<code class="descname">signal_drag_motion</code><span class="sig-paren">(</span><em>mouse_x</em>, <em>mouse_y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid.signal_drag_motion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid.signal_drag_motion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called by a <code class="docutils literal notranslate"><span class="pre">DockableMixin</span></code> widget currently being dragged to signal that the mouse has moved.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>mouse_x</strong> (<em>int</em>) – The mouse’s x coordinate relative to the root widget.</li>
+<li><strong>mouse_y</strong> (<em>int</em>) – The mouse’s y coordinate relative to the root widget.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.core.Grid.signal_drag_start">
+<code class="descname">signal_drag_start</code><span class="sig-paren">(</span><em>dockable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid.signal_drag_start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid.signal_drag_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called by the <code class="docutils literal notranslate"><span class="pre">DockableMixin</span></code> dockable widget to signal that it is being dragged.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dockable</strong> (<em>DockableMixin</em>) – The dockable who’s being dragged.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gui.core.Grid.signal_drag_stop">
+<code class="descname">signal_drag_stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Grid.signal_drag_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Grid.signal_drag_stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called by a <code class="docutils literal notranslate"><span class="pre">DockableMixin</span></code> widget to signal that it has stopped being dragged.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.core.GridGeometry">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">GridGeometry</code><span class="sig-paren">(</span><em>width</em>, <em>height</em>, <em>cell_width</em>, <em>cell_height</em>, <em>column_padding</em>, <em>row_padding</em><span class="sig-paren">)</span><a class="headerlink" href="#gui.core.GridGeometry" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="gui.core.GridGeometry.cell_height">
+<code class="descname">cell_height</code><a class="headerlink" href="#gui.core.GridGeometry.cell_height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.GridGeometry.cell_width">
+<code class="descname">cell_width</code><a class="headerlink" href="#gui.core.GridGeometry.cell_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.GridGeometry.column_padding">
+<code class="descname">column_padding</code><a class="headerlink" href="#gui.core.GridGeometry.column_padding" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.GridGeometry.height">
+<code class="descname">height</code><a class="headerlink" href="#gui.core.GridGeometry.height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.GridGeometry.row_padding">
+<code class="descname">row_padding</code><a class="headerlink" href="#gui.core.GridGeometry.row_padding" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.GridGeometry.width">
+<code class="descname">width</code><a class="headerlink" href="#gui.core.GridGeometry.width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.core.GridState">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">GridState</code><a class="reference internal" href="_modules/gui/core.html#GridState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.GridState" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.core.Point">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">Point</code><span class="sig-paren">(</span><em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="headerlink" href="#gui.core.Point" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="gui.core.Point.x">
+<code class="descname">x</code><a class="headerlink" href="#gui.core.Point.x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.Point.y">
+<code class="descname">y</code><a class="headerlink" href="#gui.core.Point.y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.core.ScrollCanvas">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">ScrollCanvas</code><span class="sig-paren">(</span><em>master</em>, <em>width</em>, <em>height</em>, <em>bind_all=False</em>, <em>scroll_wheel_scale=0.5</em>, <em>scroll_press_scale_x=0.5</em>, <em>scroll_press_scale_y=0.5</em>, <em>scroll_press_delay=50</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#ScrollCanvas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.ScrollCanvas" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.core.Size">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">Size</code><span class="sig-paren">(</span><em>width</em>, <em>height</em><span class="sig-paren">)</span><a class="headerlink" href="#gui.core.Size" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="gui.core.Size.height">
+<code class="descname">height</code><a class="headerlink" href="#gui.core.Size.height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.Size.width">
+<code class="descname">width</code><a class="headerlink" href="#gui.core.Size.width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.core.VisualSpec">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">VisualSpec</code><span class="sig-paren">(</span><em>bd_width</em>, <em>bd_colour</em>, <em>fill</em><span class="sig-paren">)</span><a class="headerlink" href="#gui.core.VisualSpec" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="gui.core.VisualSpec.bd_colour">
+<code class="descname">bd_colour</code><a class="headerlink" href="#gui.core.VisualSpec.bd_colour" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.VisualSpec.bd_width">
+<code class="descname">bd_width</code><a class="headerlink" href="#gui.core.VisualSpec.bd_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gui.core.VisualSpec.fill">
+<code class="descname">fill</code><a class="headerlink" href="#gui.core.VisualSpec.fill" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.core.Window">
+<em class="property">class </em><code class="descclassname">gui.core.</code><code class="descname">Window</code><span class="sig-paren">(</span><em>root</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/core.html#Window"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.core.Window" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-gui.plot">
+<span id="gui-plot-module"></span><h2>gui.plot Module<a class="headerlink" href="#module-gui.plot" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+<dl class="class">
+<dt id="gui.plot.DockablePlot">
+<em class="property">class </em><code class="descclassname">gui.plot.</code><code class="descname">DockablePlot</code><span class="sig-paren">(</span><em>master</em>, <em>row_span=9</em>, <em>col_span=9</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/plot.html#DockablePlot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.plot.DockablePlot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.plot.Plot">
+<em class="property">class </em><code class="descclassname">gui.plot.</code><code class="descname">Plot</code><span class="sig-paren">(</span><em>master</em>, <em>nrows=1</em>, <em>ncols=1</em>, <em>style='ggplot'</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/plot.html#Plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.plot.Plot" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>TODO: some of the “get” calls might have a significant overhead in extreme cases; it may be worth employing a</dt>
+<dd>cache system if performance is an issue.</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="gui.plot.PlotToolbar">
+<em class="property">class </em><code class="descclassname">gui.plot.</code><code class="descname">PlotToolbar</code><span class="sig-paren">(</span><em>master</em>, <em>plot</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/plot.html#PlotToolbar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.plot.PlotToolbar" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-gui.widgets">
+<span id="gui-widgets-module"></span><h2>gui.widgets Module<a class="headerlink" href="#module-gui.widgets" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+<dl class="class">
+<dt id="gui.widgets.DockableButton">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableButton</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableButton" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.widgets.DockableCanvas">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableCanvas</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableCanvas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableCanvas" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.widgets.DockableCheckbutton">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableCheckbutton</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableCheckbutton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableCheckbutton" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.widgets.DockableEntry">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableEntry</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableEntry" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.widgets.DockableFrame">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableFrame</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableFrame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableFrame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.widgets.DockableLabel">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableLabel</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableLabel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.widgets.DockableLabelFrame">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableLabelFrame</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableLabelFrame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableLabelFrame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.widgets.DockableListbox">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableListbox</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableListbox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableListbox" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.widgets.DockableRadiobutton">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableRadiobutton</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableRadiobutton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableRadiobutton" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.widgets.DockableScale">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableScale</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableScale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableScale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.widgets.DockableSpinbox">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableSpinbox</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableSpinbox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableSpinbox" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gui.widgets.DockableText">
+<em class="property">class </em><code class="descclassname">gui.widgets.</code><code class="descname">DockableText</code><span class="sig-paren">(</span><em>parent_grid</em>, <em>col_span</em>, <em>row_span</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gui/widgets.html#DockableText"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gui.widgets.DockableText" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-commands.generic">
+<span id="commands-generic-module"></span><h2>commands.generic Module<a class="headerlink" href="#module-commands.generic" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+</div>
+<div class="section" id="module-commands.networktables">
+<span id="commands-networktables-module"></span><h2>commands.networktables Module<a class="headerlink" href="#module-commands.networktables" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+<dl class="class">
+<dt id="commands.networktables.ListElement">
+<em class="property">class </em><code class="descclassname">commands.networktables.</code><code class="descname">ListElement</code><span class="sig-paren">(</span><em>is_entry</em>, <em>key</em>, <em>parent</em><span class="sig-paren">)</span><a class="headerlink" href="#commands.networktables.ListElement" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="commands.networktables.ListElement.is_entry">
+<code class="descname">is_entry</code><a class="headerlink" href="#commands.networktables.ListElement.is_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="commands.networktables.ListElement.key">
+<code class="descname">key</code><a class="headerlink" href="#commands.networktables.ListElement.key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="commands.networktables.ListElement.parent">
+<code class="descname">parent</code><a class="headerlink" href="#commands.networktables.ListElement.parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">spooky-console</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-main">main Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-exceptions">exceptions Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-ntutils">ntutils Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-utils">utils Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-gui.core">gui.core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-gui.plot">gui.plot Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-gui.widgets">gui.widgets Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-commands.generic">commands.generic Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-commands.networktables">commands.networktables Module</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">spooky-console</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Robert Russell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/api.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

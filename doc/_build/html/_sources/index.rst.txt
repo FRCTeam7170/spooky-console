@@ -7,6 +7,14 @@
 spooky-console
 ==============
 
+What's happening here?
+======================
+
+Nothing
+
+Table of Contents
+=================
+
 .. toctree::
    :maxdepth: 2
 

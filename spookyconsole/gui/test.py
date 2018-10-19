@@ -1,7 +1,7 @@
 
-import gui.core as core
-import gui.plot as plot
-import utils
+from . import core
+from . import plot
+from .. import utils
 import math
 import matplotlib.style as s
 print(s.available)

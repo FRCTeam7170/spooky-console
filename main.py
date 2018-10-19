@@ -9,7 +9,7 @@ import pycmds
 import prompt_toolkit as pt
 from prompt_toolkit.eventloop import use_asyncio_event_loop
 from prompt_toolkit.patch_stdout import patch_stdout
-from exceptions import AbortPromptLoop
+from spookyconsole.exceptions import AbortPromptLoop
 
 
 PROG_NAME = "spooky-console"
@@ -75,7 +75,7 @@ async def my_coroutine():
 
 
 async def main():
-    from commands.generic import quit_, quit_aliases
+    from spookyconsole.commands.generic import quit_, quit_aliases
     cli.add_command(quit_, aliases=quit_aliases)
     app = Application(cli)
     print_banner()

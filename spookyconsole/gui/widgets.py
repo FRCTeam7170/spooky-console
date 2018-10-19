@@ -4,7 +4,7 @@ TODO
 """
 
 import tkinter as tk
-from gui.core import DockableMixin, DragPoint
+from .core import DockableMixin
 
 
 class DockableLabel(DockableMixin, tk.Label):
@@ -44,6 +44,14 @@ class DockableScale(DockableMixin, tk.Scale):
 
 
 class DockableSpinbox(DockableMixin, tk.Spinbox):
+    pass
+
+
+class DockableCanvas(DockableMixin, tk.Canvas):
+    pass
+
+
+class DockableText(DockableMixin, tk.Text):
     pass
 
 

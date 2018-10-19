@@ -10,7 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import matplotlib.style as mplstyle
 from matplotlib.figure import Figure
 import matplotlib.animation as mplani
-from gui.core import DockableMixin, DragPoint
+from .core import DockableMixin, DragPoint
 
 
 class LiveUpdater:
@@ -98,7 +98,7 @@ class PlotToolbar(tk.Frame):
 
 class Plot(tk.Frame):
     """
-    TODO: some of the get_... calls might have a significant overhead in extreme cases; it may be worth employing a
+    TODO: some of the "get" calls might have a significant overhead in extreme cases; it may be worth employing a
         cache system if performance is an issue.
     """
 

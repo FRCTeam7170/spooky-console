@@ -1,7 +1,7 @@
 
-from gui.core import ScrollCanvas
-from gui.plot import Plot, LiveUpdater
-from utils import xy_data_generator
+from .core import ScrollCanvas
+from .plot import Plot, LiveUpdater
+from ..utils import xy_data_generator
 import tkinter as tk
 import math
 

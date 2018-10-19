@@ -12,47 +12,47 @@ main Module
 exceptions Module
 -----------------
 
-.. automodule:: spookyconsole.exceptions
+.. automodule:: exceptions
     :members:
 
 ntutils Module
 --------------
 
-.. automodule:: spookyconsole.ntutils
+.. automodule:: ntutils
     :members:
 
 utils Module
 ------------
 
-.. automodule:: spookyconsole.utils
+.. automodule:: utils
     :members:
 
 gui.core Module
 ---------------
 
-.. automodule:: spookyconsole.gui.core
+.. automodule:: gui.core
     :members:
 
 gui.plot Module
 ---------------
 
-.. automodule:: spookyconsole.gui.plot
+.. automodule:: gui.plot
     :members:
 
 gui.widgets Module
 ------------------
 
-.. automodule:: spookyconsole.gui.widgets
+.. automodule:: gui.widgets
     :members:
 
 commands.generic Module
 -----------------------
 
-.. automodule:: spookyconsole.commands.generic
+.. automodule:: commands.generic
     :members:
 
 commands.networktables Module
 -----------------------------
 
-.. automodule:: spookyconsole.commands.networktables
+.. automodule:: commands.networktables
     :members:

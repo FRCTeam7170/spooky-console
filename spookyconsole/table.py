@@ -3,10 +3,9 @@
 TODO
 """
 
-import tableprint as tp
 from collections import namedtuple
-from utils import find_nth
-from exceptions import TableFormatError
+from .utils import find_nth
+from .exceptions import TableFormatError
 
 
 def is_numeric(data):

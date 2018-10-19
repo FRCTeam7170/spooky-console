@@ -1,6 +1,6 @@
 
 """
-TODO
+Core functionality for the GUI component of spooky-console.
 """
 
 import tkinter as tk
@@ -147,7 +147,7 @@ class GridState(np.ndarray):
 
 class Grid(ScrollCanvas):
     """
-    TODO: MAKE ALL DOC SPHINXABLE
+    TODO
     """
 
     # Some minimums regarding geometry.
@@ -180,14 +180,22 @@ class Grid(ScrollCanvas):
         """
         :param master: The master widget for the canvas.
         :param width: Initial amount of columns in the grid.
+        :type width: int
         :param height: Initial amount of rows in the grid.
+        :type height: int
         :param cell_width: Initial width (in pixels) of each cell in the grid.
+        :type cell_width: int
         :param cell_height: Initial height (in pixels) of each cell in the grid.
+        :type cell_height: int
         :param column_padding: Initial padding between columns in the grid.
+        :type column_padding: int
         :param row_padding: Initial padding between rows in the grid.
+        :type row_padding: int
         :param resize_protocol: Initial protocol to employ when window size changes past scroll region.
-        :param highlight_visual: Initial VisualSpec to use for dockable highlight.
-        :param grid_visual: Initial VisualSpec to use for grid.
+        :param highlight_visual: Initial specification for how the highlight effect shall appear.
+        :type highlight_visual: VisualSpec
+        :param grid_visual: Initial specification for how the grid effect shall appear.
+        :type grid_visual: VisualSpec
         :param args: Extra args for the canvas constructor.
         :param kwargs: Extra kwargs for the canvas constructor.
         """
@@ -196,37 +204,70 @@ class Grid(ScrollCanvas):
                          height * (cell_height + row_padding),
                          *args, **kwargs)
 
-        # Stores a reference to the dockable currently being dragged, if one exists.
         self._curr_dockable = None
-        # Stores the currently-being-dragged dockable's cell before the drag initiated.
+        """Stores a reference to the ``DockableMixin`` currently being dragged, if one exists."""
+
         self._curr_dockable_orig_cell = None
-        # The cell currently hovered over.
+        """Stores the currently-being-dragged ``DockableMixin``'s cell before the drag initiated."""
+
         self._curr_cell = None
-        # Stores/manages which cells are populated.
+        """The top-left ``Cell`` of the group of cells currently being hovered over."""
+
         self._grid_state = GridState(width, height)
-        # A dictionary whose keys are all the dockables registered to this grid and whose values are DockableEntry's.
+        """Stores/manages which cells are populated."""
+
         self._dockables = {}
-        # The grid's current geometry.
+        """
+        A dictionary whose keys are all the ``DockableMixin``s registered to this grid and whose values are
+        ``DockableEntry``s.
+        """
+
         self.geometry = GridGeometry(width, height, cell_width, cell_height, column_padding, row_padding)
-        # Stores the geometry before any changes from window resizing are made.
+        """The grid's current ``GridGeometry``."""
+
         self.orig_geometry = self.geometry
-        # A ResizeData tuple to cache the parent window's width and height while it's being resized.
+        """Stores the geometry (as a ``GridGeometry``) before any changes from window resizing are made."""
+
         self._resize_data = None
-        # Stores the callback id for _resize_after_callback so it may be cancelled when the resize protocol changes.
+        """A ``Size`` tuple to cache the parent window's width and height while it's being resized."""
+
         self._resize_after_id = None
+        """
+        Stores the callback id for ``Grid._resize_after_callback`` so it may be cancelled when the
+        ``Grid.resize_protocol`` changes.
+        """
+
         self.highlight_visual = highlight_visual
+        """The current ``VisualSpec`` for the highlighting effect."""
+
         self.grid_visual = grid_visual
+        """The current ``VisualSpec`` for the grid drawn while a ``DockableMixin`` is dragged."""
+
         self.resize_protocol = None
+        """
+        An integer representing the protocol to employ when the parent window is resized such that the grid's canvas is
+        granted more space than required by its current scrollregion.
+        
+        May be one of the following:
+            - ``Grid.RESIZE_PROTO_NONE``: Do nothing when the window is resized.
+            - ``Grid.RESIZE_PROTO_EXPAND_CELLS``: Expand each cell equally to fit any new space when the window is\
+            resized.
+            - ``Grid.RESIZE_PROTO_ADD_PADDING``: Add padding equally in between each column or row when the window\
+            is resized.
+        
+        """
+
         self.set_resize_protocol(resize_protocol)
 
     def register_dockable(self, dockable):
         """
-        Register a dockable to be managed by this grid. Its tkinter parent must already be this grid.
+        Register a ``DockableMixin`` to be managed by this grid. Its tkinter parent must already be this grid.
 
-        Registered dockables should never be manually (i.e. dockable.configure(...)) positioned, have their width and
-        height manually changed, etcetera. Instead use the appropriate methods on dockable objects.
+        Registered dockables should never be manually (i.e. ``dockable.configure(...)``) positioned, have their width
+        and height manually changed, etcetera. Instead use the appropriate methods on ``DockableMixin`` objects.
 
-        :param dockable: The DockableMixin instance to be managed by this grid.
+        :param dockable: The dockable to be managed by this grid.
+        :type dockable: DockableMixin
         """
         # Find an initial position for this dockable.
         cell = self._find_next_empty_cell_group(dockable.col_span, dockable.row_span)
@@ -236,12 +277,15 @@ class Grid(ScrollCanvas):
 
     def move_dockable(self, dockable, cell):
         """
-        Move the given dockable to the given cell. If there is a grid conflict, this will fail and no changes will be
-        made
+        Move the given ``DockableMixin`` ``dockable`` to the given ``Cell`` ``cell``. If there is a grid conflict, this
+        will fail and no changes will be made.
 
         :param dockable: The dockable to move.
+        :type dockable: DockableMixin
         :param cell: The cell to move the dockable to.
+        :type cell: Cell
         :return: Whether or not the move was successful.
+        :rtype: bool
         """
         old_cell = self._dockables[dockable].cell
         conflicts_array = self._grid_state.conflicts_where(cell, dockable.col_span, dockable.row_span)
@@ -259,11 +303,13 @@ class Grid(ScrollCanvas):
 
     def dockable_resized(self, dockable):
         """
-        Signal to the grid that a dockable's col and/or row span has been changed, and thus it must be redrawn and its
-        position must be recalculated. If it must be moved, it will be moved as little as possible. If no where on the
-        grid satisfies its new size, the grid is expanded horizontally as needed to accommodate the dockable.
+        Signal to this grid that the ``DockableMixin`` ``dockable``'s ``DockableMixin.col_span`` and/or
+        ``DockableMixin.row_span`` has been changed, and thus it must be redrawn and its position must be recalculated.
+        If it must be moved, it will be moved as little as possible. If no where on the grid satisfies its new size, the
+        grid is expanded horizontally as needed to accommodate the ``dockable``.
 
         :param dockable: The dockable that has been resized.
+        :type dockable: DockableMixin
         """
         old_cell = self._dockables[dockable].cell
         self.remove_dockable(dockable)
@@ -272,11 +318,14 @@ class Grid(ScrollCanvas):
 
     def _place_dockable(self, dockable, cell):
         """
-        Internal method to place a dockable at the given cell, populate the grid state appropriately, and add the
-        dockable to the dockables dictionary. This method does not check for grid conflicts.
+        Internal method to place the ``DockableMixin`` ``dockable`` at the given ``Cell`` ``cell``, populate the
+        ``Grid._grid_state`` appropriately, and add the ``dockable`` to the ``Grid._dockables`` dictionary. This method
+        does not check for grid conflicts.
 
         :param dockable: The dockable to place.
+        :type dockable: DockableMixin
         :param cell: The cell to place the dockable at.
+        :type cell: Cell
         """
         self._grid_state.populate(cell, dockable.col_span, dockable.row_span)
         bbox = self._calc_bbox(cell, dockable.col_span, dockable.row_span)
@@ -285,9 +334,11 @@ class Grid(ScrollCanvas):
 
     def remove_dockable(self, dockable):
         """
-        Remove the given dockable from the grid. This method is functionally the opposite of _place_dockable.
+        Remove the given ``DockableMixin`` ``dockable`` from the grid. This method is functionally the opposite of
+        ``Grid._place_dockable``.
 
         :param dockable: The dockable to remove.
+        :type dockable: DockableMixin
         """
         id_, cell = self._dockables.pop(dockable)
         self.delete(id_)
@@ -298,9 +349,13 @@ class Grid(ScrollCanvas):
         Calculate the bounding box (bbox) in canvas pixels described by the given information.
 
         :param cell: The top-left cell of the box.
+        :type cell: Cell
         :param col_span: The width of the box in cells.
+        :type col_span: int
         :param row_span: The height of the box in cells.
-        :return: A BBox namedtuple.
+        :type row_span: int
+        :return: The calculated bbox.
+        :rtype: BBox
         """
         x = cell.column * (self.geometry.cell_width + self.geometry.column_padding)
         y = cell.row * (self.geometry.cell_height + self.geometry.row_padding)
@@ -310,21 +365,23 @@ class Grid(ScrollCanvas):
 
     def _find_next_empty_cell_group(self, col_span, row_span, from_=Cell(0, 0)):
         """
-        Find the next cell (c, r) satisfying that condition that (c + ci, r + ri) is unpopulated for all
-        0 <= ci < col_span, 0 <= ri < row_span. In other words, find a unpopulated rectangular group of cells with
-        dimensions col_span (width) by row_span (height) and return the top-left cell coordinate. This method uses the
-        _naive_search algorithm with from_ as the origin cell, meaning it will attempt to find the cell group nearest
-        to from_.
+        Find an unpopulated rectangular group of cells with dimensions ``col_span`` (width) by ``row_span`` (height) and
+        return the top-left cell coordinate. This method uses the ``Grid._naive_search`` algorithm with ``from_`` as the
+        origin cell, meaning it will attempt to find the cell group nearest to ``from_``.
 
         If such a cell does not exist, the grid is expanded so as to fit such a rectangular group of cells. More
-        specifically, we first ensure the grid height is greater than or equal to row_span then we expand the grid
+        specifically, we first ensure the grid height is greater than or equal to ``row_span``, then we expand the grid
         horizontally as few columns as possible so that the specified rectangular group of cells may fit in the
         top-right corner of the grid.
 
         :param col_span: The width of the unpopulated cell group to find.
+        :type col_span: int
         :param row_span: The height of the unpopulated cell group to find.
+        :type row_span: int
         :param from_: The cell to start the search from.
+        :type from_: Cell
         :return: The coordinate of the top-left cell in the cell group.
+        :rtype: Cell
         """
         # First try to find a preexisting group of cells.
         cell = self._naive_search(from_, col_span, row_span)
@@ -347,14 +404,19 @@ class Grid(ScrollCanvas):
 
     def _naive_search(self, origin_cell, col_span, row_span):
         """
-        Search the grid around origin_cell for a rectangular group of cells with dimensions col_span (width) by row_span
-        (height) and return the top-left cell. The group of cells nearest to origin_cell is returned, where nearest is
-        defined as the smallest sum of positive column offset and positive row offset.
+        Search the grid around ``origin_cell`` for a rectangular group of cells with dimensions ``col_span`` (width) by
+        ``row_span`` (height) and return the top-left cell. The group of cells nearest to ``origin_cell`` is returned,
+        where nearest is defined as the smallest sum of positive column offset and positive row offset from
+        ``origin_cell``.
 
-        :param origin_cell: The cell to search around
+        :param origin_cell: The cell to search around.
+        :type origin_cell: Cell
         :param col_span: The width of the rectangular group of cells to search for.
+        :type col_span: int
         :param row_span: The height of the rectangular group of cells to search for.
+        :type row_span: int
         :return: The top-left cell in the group or None if no such group of cells can be found.
+        :type: Cell
         """
         col, row = origin_cell
         lco = -col  # Lower Column Offset limit
@@ -377,9 +439,10 @@ class Grid(ScrollCanvas):
 
     def signal_drag_start(self, dockable):
         """
-        Called by a dockable widget to signal that it is being dragged.
+        Called by the ``DockableMixin`` dockable widget to signal that it is being dragged.
 
         :param dockable: The dockable who's being dragged.
+        :type dockable: DockableMixin
         """
         self._draw_grid()
         self._curr_dockable = dockable
@@ -393,7 +456,7 @@ class Grid(ScrollCanvas):
 
     def signal_drag_stop(self):
         """
-        Called by a dockable widget to signal that it has stopped being dragged.
+        Called by a ``DockableMixin`` widget to signal that it has stopped being dragged.
         """
         self._clear_grid()
         self._clear_highlight()
@@ -409,10 +472,12 @@ class Grid(ScrollCanvas):
 
     def signal_drag_motion(self, mouse_x, mouse_y):
         """
-        Called by a dockable widget currently being dragged to signal that the mouse has moved.
+        Called by a ``DockableMixin`` widget currently being dragged to signal that the mouse has moved.
 
-        :param mouse_x: The mouse's x coordinate relative to the canvas.
-        :param mouse_y: The mouse's y coordinate relative to the canvas.
+        :param mouse_x: The mouse's x coordinate relative to the root widget.
+        :type mouse_x: int
+        :param mouse_y: The mouse's y coordinate relative to the root widget.
+        :type mouse_y: int
         """
         self._clear_highlight()
         self._curr_cell = None
@@ -446,11 +511,14 @@ class Grid(ScrollCanvas):
 
     def _find_nearest_cell(self, x, y):
         """
-        Internal method to find the cell nearest to the given x and y coordinates relative to the canvas.
+        Internal method to find the ``Cell`` nearest to the given ``x`` and ``y`` coordinates relative to the canvas.
 
         :param x: The x coordinate relative to the canvas.
+        :type x: int
         :param y: The y coordinate relative to the canvas.
+        :type y: int
         :return: The closest cell.
+        :rtype: Cell
         """
         col = x / (self.geometry.cell_width + self.geometry.column_padding)
         row = y / (self.geometry.cell_height + self.geometry.row_padding)
@@ -460,24 +528,33 @@ class Grid(ScrollCanvas):
                      cell_width=None, cell_height=None,
                      column_padding=None, row_padding=None):
         """
-        Request the grid's geometry to be changed.
+        Request the grid's geometry (``Grid.geometry``) to be changed.
 
-        Note that cell_width and cell_height have minimums, and, in the event that a requested change to them violates
-        these minimums, they will be clamped greater than the minimums.
+        Note that ``cell_width`` and ``cell_height`` have minimums, and, in the event that a requested change to them
+        violates these minimums, they will be clamped greater than the minimums. The minimums are
+        ``Grid.MIN_CELL_WIDTH`` and ``Grid.MIN_CELL_HEIGHT``.
 
-        Also, width and height cannot be changed so as to "clip off" any dockables on the grid. Therefore, once again,
-        the width and height will be clamped to be greater than the minimum width and height of the grid state.
+        Also, ``width`` and ``height`` cannot be changed so as to "clip off" any ``DockableMixin``s on the grid.
+        Therefore, once again, the ``width`` and ``height`` will be clamped to be greater than the minimum width and
+        height of the grid state (``GridState.min_width`` and ``GridState.min_height``).
 
-        To check if any of the requested new dimensions have been denied, consult the returned GridGeometry object,
+        To check if any of the requested new dimensions have been denied, consult the returned ``GridGeometry`` object,
         which contains the geometries actually deployed.
 
         :param width: The new width of the grid, or None for no change.
+        :type width: int
         :param height: The new height of the grid, or None for no change.
+        :type height: int
         :param cell_width: The new cell width of the grid, or None for no change.
+        :type cell_width: int
         :param cell_height: The new cell height of the grid, or None for no change.
+        :type cell_height: int
         :param column_padding: The new column padding of the grid, or None for no change.
+        :type column_padding: int
         :param row_padding: The new row padding of the grid, or None for no change.
-        :return: The new GridGeometry object.
+        :type row_padding: int
+        :return: The new ``GridGeometry`` object.
+        :rtype: GridGeometry
         """
         # Boolean to indicate if the dockables' geometries must be recalculated.
         invalid_dockable_geom = False
@@ -519,13 +596,19 @@ class Grid(ScrollCanvas):
 
     def _update_state_size(self, width, height):
         """
-        Update the size of the grid state to the given width and height.
+        Update the size of the grid state to the given ``width`` and ``height``.
+
+        Note that simply doing
+        ::
+            self._grid_state.resize(height, width)
+
+        will not suffice since the data stored in the grid state gets disordered.
 
         :param width: The new width.
+        :type width: int
         :param height: The new height.
+        :type height: int
         """
-        # Note that a simple self._grid_state.resize(height, width) cannot be used since the data stored in it gets
-        # disordered.
         self._grid_state = GridState(width, height)
         # Repopulate the state with all the dockables.
         for dockable, (_, cell) in self._dockables.items():
@@ -533,7 +616,7 @@ class Grid(ScrollCanvas):
 
     def _update_dockable_geometry(self):
         """
-        Update the geometry of each dockable managed by this grid.
+        Update the geometry of each ``DockableMixin`` managed by this grid.
         """
         for dockable, (id_, cell) in self._dockables.items():
             bbox = self._calc_bbox(cell, dockable.col_span, dockable.row_span)
@@ -545,12 +628,7 @@ class Grid(ScrollCanvas):
 
     def set_resize_protocol(self, protocol):
         """
-        Set the resize protocol to the given one.
-
-        protocol may be one of:
-            Grid.RESIZE_PROTO_NONE = 0 --> Do nothing when the window is resized.
-            Grid.RESIZE_PROTO_EXPAND_CELLS = 1 --> Change the cell width/height when the window is resized.
-            Grid.RESIZE_PROTO_ADD_PADDING = 2 --> Change the row/column padding when the window is resized.
+        Set the resize protocol (``Grid.resize_protocol``) to the given one.
 
         :param protocol: The resize protocol to employ.
         """
@@ -597,10 +675,8 @@ class Grid(ScrollCanvas):
         self.grid_visual = VisualSpec(bd_width, bd_colour, fill)
 
     def _draw_grid(self):
-        """
-        Draw the grid rectangles on the canvas. One rectangle is drawn for each cell.
-        TODO: The grid rectangles needn't be redrawn every time; they could be cached and invalidated when geometry is reset.
-        """
+        """Draw the grid rectangles on the canvas. One rectangle is drawn for each cell."""
+        # TODO: The grid rectangles needn't be redrawn every time; they could be cached and invalidated when geometry is reset.
         dx = self.geometry.cell_width + self.geometry.column_padding
         dy = self.geometry.cell_height + self.geometry.row_padding
         for x in range(0, self.geometry.width * dx, dx):
@@ -612,19 +688,20 @@ class Grid(ScrollCanvas):
                                       tag=self.TAG_GRIDLINE)
 
     def _clear_grid(self):
-        """
-        Clear the grid lines on the canvas, should they exist.
-        """
+        """Clear the grid lines on the canvas, should they exist."""
         self.delete(self.TAG_GRIDLINE)
 
     def _set_highlight(self, cell, col_span, row_span):
         """
-        Draw a highlighting rectangle with an upper-left cell located at cell, width in cells equal to col_span, and
-        height in cells equal to row_span.
+        Draw a highlighting rectangle with its upper-left cell located at ``cell``, width in cells equal to
+        ``col_span``, and height in cells equal to ``row_span``.
 
         :param cell: The top-left cell.
+        :type cell: Cell
         :param col_span: The width in cells.
+        :type col_span: int
         :param row_span: The height in cells.
+        :type row_span: int
         """
         x, y, w, h = self._calc_bbox(cell, col_span, row_span)
         # Draw the rectangle. The +- constants on each coordinate was empirically determined to produce the best-looking
@@ -636,16 +713,14 @@ class Grid(ScrollCanvas):
                               tag=self.TAG_HIGHLIGHT)
 
     def _clear_highlight(self):
-        """
-        Clear the highlight rectangle on the canvas, should it exist.
-        """
+        """Clear the highlight rectangle on the canvas, should it exist."""
         self.delete(self.TAG_HIGHLIGHT)
 
     def _resize_bind_callback(self, event):
         """
         A callback for resize events. Instead of resetting the geometry (which is somewhat expensive) upon every resize
-        event, we schedule a callback to _resize_after_callback every RESIZE_UPDATE_DELAY milliseconds but cache the new
-        width and height every resize event.
+        event, we schedule a callback to ``Grid._resize_after_callback`` every ``Grid.RESIZE_UPDATE_DELAY``
+        milliseconds, but cache the new width and height every resize event.
 
         :param event: The tk event object.
         """
@@ -656,9 +731,7 @@ class Grid(ScrollCanvas):
         self._resize_data = Size(event.width, event.height)
 
     def _resize_after_callback(self):
-        """
-        Called every RESIZE_UPDATE_DELAY if the user is actively changing the size of the parent window.
-        """
+        """Called every ``Grid.RESIZE_UPDATE_DELAY`` if the user is actively changing the size of the parent window."""
         # Whether the geometry in the x direction should change.
         resize_x = self._should_resize_x()
         # Whether the geometry in the y direction should change.
@@ -722,13 +795,19 @@ class Grid(ScrollCanvas):
     @staticmethod
     def _contained_in(query_cell, containing_cell, col_span, row_span):
         """
-        Check whether query_cell is contained in the rectangle described by containing_cell, col_span, and row_span.
+        Check whether ``query_cell`` is contained in the rectangle described by ``containing_cell``, ``col_span``,
+        and ``row_span``.
 
         :param query_cell: The cell to check for containment in the rectangle.
+        :type query_cell: Cell
         :param containing_cell: The top-left cell in the rectangle.
+        :type containing_cell: Cell
         :param col_span: The width in cells of the rectangle.
+        :type col_span: int
         :param row_span: The height in cells of the rectangle.
-        :return: Whether query_cell is in the rectangle described by containing_cell, col_span, and row_span.
+        :type row_span: int
+        :return: Whether ``query_cell`` is in the rectangle described by the given information.
+        :rtype: bool
         """
         col, row = query_cell
         ccol, crow = containing_cell
@@ -737,7 +816,7 @@ class Grid(ScrollCanvas):
     @staticmethod
     def _clamp(n, min_):
         """
-        Helper method to clamp a positive number n to greater than min_.
+        Helper method to clamp a positive number ``n`` to greater than ``min_``.
 
         :param n: The number to clamp.
         :param min_: The lower bound on n.
@@ -844,7 +923,7 @@ class GuiManager:
                 self.root.update()
                 await asyncio.sleep(interval)
         except tk.TclError:
-            print("Tkinter error occurred.")  # TODO: Temp
+            print("Tkinter error occurred.")  # TODO: Temp?
 
     def new_win(self):
         win = Window(self.root)

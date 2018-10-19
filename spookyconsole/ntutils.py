@@ -112,3 +112,7 @@ class DoubleArrayParamType(pycmds.ListParamType):
 BOOLEAN_ARRAY = BooleanArrayParamType("[]")
 DOUBLE_ARRAY = DoubleArrayParamType("[]")
 STRING_ARRAY = pycmds.LIST
+
+NT_PATH = NTPathParamType()
+NT_ENTRY = NTEntryParamType()
+NT_TABLE = NTTableParamType()

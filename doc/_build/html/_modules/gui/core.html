@@ -1,0 +1,1043 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>gui.core &#8212; spooky-console  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for gui.core</h1><div class="highlight"><pre>
+<span></span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Core functionality for the GUI component of spooky-console.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
+
+
+<span class="n">Cell</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;Cell&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;column&quot;</span><span class="p">,</span> <span class="s2">&quot;row&quot;</span><span class="p">))</span>
+<span class="n">GridGeometry</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;GridGeometry&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="s2">&quot;height&quot;</span><span class="p">,</span>
+                                           <span class="s2">&quot;cell_width&quot;</span><span class="p">,</span> <span class="s2">&quot;cell_height&quot;</span><span class="p">,</span>
+                                           <span class="s2">&quot;column_padding&quot;</span><span class="p">,</span> <span class="s2">&quot;row_padding&quot;</span><span class="p">))</span>
+<span class="n">VisualSpec</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;VisualSpec&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;bd_width&quot;</span><span class="p">,</span> <span class="s2">&quot;bd_colour&quot;</span><span class="p">,</span> <span class="s2">&quot;fill&quot;</span><span class="p">))</span>
+<span class="n">DockableEntry</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;DockableEntry&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;cell&quot;</span><span class="p">))</span>
+<span class="n">Size</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;Size&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="s2">&quot;height&quot;</span><span class="p">))</span>
+<span class="n">Point</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;Point&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">))</span>
+<span class="n">BBox</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;BBox&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="s2">&quot;h&quot;</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="ScrollCanvas"><a class="viewcode-back" href="../../api.html#gui.core.ScrollCanvas">[docs]</a><span class="k">class</span> <span class="nc">ScrollCanvas</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">Canvas</span><span class="p">):</span>
+
+    <span class="n">MAX_SCROLLBAR_POS</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span>
+                 <span class="n">bind_all</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">scroll_wheel_scale</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+                 <span class="n">scroll_press_scale_x</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+                 <span class="n">scroll_press_scale_y</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+                 <span class="n">scroll_press_delay</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                 <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">master</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_scrollbar</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Scrollbar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">xview</span><span class="p">,</span> <span class="n">orient</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_scrollbar</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Scrollbar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">yview</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">xscrollcommand</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">x_scrollbar</span><span class="o">.</span><span class="n">set</span><span class="p">,</span> <span class="n">yscrollcommand</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">y_scrollbar</span><span class="o">.</span><span class="n">set</span><span class="p">,</span>
+                       <span class="n">xscrollincrement</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">yscrollincrement</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">scrollregion</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">NSEW</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_scrollbar</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">EW</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_scrollbar</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">NS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">grid_rowconfigure</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">grid_columnconfigure</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scroll_wheel_scale</span> <span class="o">=</span> <span class="n">scroll_wheel_scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scroll_press_scale_x</span> <span class="o">=</span> <span class="n">scroll_press_scale_x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scroll_press_scale_y</span> <span class="o">=</span> <span class="n">scroll_press_scale_y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scroll_press_delay</span> <span class="o">=</span> <span class="n">scroll_press_delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_start_pos</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_delta_x</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_delta_y</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">bind_all</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bind_all</span><span class="p">(</span><span class="s2">&quot;&lt;MouseWheel&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_scroll</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bind_all</span><span class="p">(</span><span class="s2">&quot;&lt;Button-2&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_press</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bind_all</span><span class="p">(</span><span class="s2">&quot;&lt;B2-Motion&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_motion</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bind_all</span><span class="p">(</span><span class="s2">&quot;&lt;ButtonRelease-2&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_release</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tag_widget</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bind_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bind_class_name</span><span class="p">,</span> <span class="s2">&quot;&lt;MouseWheel&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_scroll</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bind_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bind_class_name</span><span class="p">,</span> <span class="s2">&quot;&lt;Button-2&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_press</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bind_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bind_class_name</span><span class="p">,</span> <span class="s2">&quot;&lt;B2-Motion&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_motion</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bind_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bind_class_name</span><span class="p">,</span> <span class="s2">&quot;&lt;ButtonRelease-2&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_release</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bind_class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;ScrollCanvas</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">tag_widget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">widget</span><span class="p">):</span>
+        <span class="n">widget</span><span class="o">.</span><span class="n">bindtags</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">bind_class_name</span><span class="p">,)</span> <span class="o">+</span> <span class="n">widget</span><span class="o">.</span><span class="n">bindtags</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">resize_scroll_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">scrollregion</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_wheel_scroll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_scrollbar</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_SCROLLBAR_POS</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">yview_scroll</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">delta</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scroll_wheel_scale</span><span class="p">),</span> <span class="n">tk</span><span class="o">.</span><span class="n">UNITS</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_wheel_press</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_start_pos</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_press_update_view</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_wheel_motion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_scrollbar</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_SCROLLBAR_POS</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_delta_x</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_start_pos</span><span class="o">.</span><span class="n">x</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_scrollbar</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_SCROLLBAR_POS</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_delta_y</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_start_pos</span><span class="o">.</span><span class="n">y</span>
+
+    <span class="k">def</span> <span class="nf">_wheel_release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_start_pos</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_delta_x</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_delta_y</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">_wheel_press_update_view</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xview_scroll</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_delta_x</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scroll_press_scale_x</span><span class="p">),</span> <span class="n">tk</span><span class="o">.</span><span class="n">UNITS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yview_scroll</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_delta_y</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scroll_press_scale_y</span><span class="p">),</span> <span class="n">tk</span><span class="o">.</span><span class="n">UNITS</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_drag_start_pos</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scroll_press_delay</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wheel_press_update_view</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GridState"><a class="viewcode-back" href="../../api.html#gui.core.GridState">[docs]</a><span class="k">class</span> <span class="nc">GridState</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">min_width</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">min_height</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">empty_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">GridState</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">conflicts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">):</span>
+        <span class="n">col</span><span class="p">,</span> <span class="n">row</span> <span class="o">=</span> <span class="n">cell</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">row</span><span class="p">:</span><span class="n">row</span><span class="o">+</span><span class="n">row_span</span><span class="p">,</span> <span class="n">col</span><span class="p">:</span><span class="n">col</span><span class="o">+</span><span class="n">col_span</span><span class="p">]</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">conflicts_where</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">empty_copy</span><span class="p">()</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">)</span> <span class="o">&amp;</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">populate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">unpopulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="n">col</span><span class="p">,</span> <span class="n">row</span> <span class="o">=</span> <span class="n">cell</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">row</span><span class="p">:</span><span class="n">row</span><span class="o">+</span><span class="n">row_span</span><span class="p">,</span> <span class="n">col</span><span class="p">:</span><span class="n">col</span><span class="o">+</span><span class="n">col_span</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span></div>
+
+
+<div class="viewcode-block" id="Grid"><a class="viewcode-back" href="../../api.html#gui.core.Grid">[docs]</a><span class="k">class</span> <span class="nc">Grid</span><span class="p">(</span><span class="n">ScrollCanvas</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Some minimums regarding geometry.</span>
+    <span class="n">MIN_CELL_WIDTH</span> <span class="o">=</span> <span class="mi">25</span>
+    <span class="n">MIN_CELL_HEIGHT</span> <span class="o">=</span> <span class="mi">25</span>
+
+    <span class="c1"># Default visuals.</span>
+    <span class="n">HIGHLIGHT_VISUAL_DEFAULT</span> <span class="o">=</span> <span class="n">VisualSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;#A00000&quot;</span><span class="p">,</span> <span class="s2">&quot;#303030&quot;</span><span class="p">)</span>
+    <span class="n">GRID_VISUAL_DEFAULT</span> <span class="o">=</span> <span class="n">VisualSpec</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;#101010&quot;</span><span class="p">,</span> <span class="s2">&quot;#808080&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Canvas tag constants.</span>
+    <span class="n">TAG_GRIDLINE</span> <span class="o">=</span> <span class="s2">&quot;gridline&quot;</span>
+    <span class="n">TAG_HIGHLIGHT</span> <span class="o">=</span> <span class="s2">&quot;highlight&quot;</span>
+
+    <span class="c1"># Grid resize protocols.</span>
+    <span class="n">RESIZE_PROTO_NONE</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">RESIZE_PROTO_EXPAND_CELLS</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">RESIZE_PROTO_ADD_PADDING</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="c1"># How frequently in milliseconds to update this grid&#39;s geometry when the window size is changed.</span>
+    <span class="n">RESIZE_UPDATE_DELAY</span> <span class="o">=</span> <span class="mi">50</span>  <span class="c1"># ms</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span>
+                 <span class="n">cell_width</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">cell_height</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                 <span class="n">column_padding</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">row_padding</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">resize_protocol</span><span class="o">=</span><span class="n">RESIZE_PROTO_EXPAND_CELLS</span><span class="p">,</span>
+                 <span class="n">highlight_visual</span><span class="o">=</span><span class="n">HIGHLIGHT_VISUAL_DEFAULT</span><span class="p">,</span>
+                 <span class="n">grid_visual</span><span class="o">=</span><span class="n">GRID_VISUAL_DEFAULT</span><span class="p">,</span>
+                 <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param master: The master widget for the canvas.</span>
+<span class="sd">        :param width: Initial amount of columns in the grid.</span>
+<span class="sd">        :type width: int</span>
+<span class="sd">        :param height: Initial amount of rows in the grid.</span>
+<span class="sd">        :type height: int</span>
+<span class="sd">        :param cell_width: Initial width (in pixels) of each cell in the grid.</span>
+<span class="sd">        :type cell_width: int</span>
+<span class="sd">        :param cell_height: Initial height (in pixels) of each cell in the grid.</span>
+<span class="sd">        :type cell_height: int</span>
+<span class="sd">        :param column_padding: Initial padding between columns in the grid.</span>
+<span class="sd">        :type column_padding: int</span>
+<span class="sd">        :param row_padding: Initial padding between rows in the grid.</span>
+<span class="sd">        :type row_padding: int</span>
+<span class="sd">        :param resize_protocol: Initial protocol to employ when window size changes past scroll region.</span>
+<span class="sd">        :param highlight_visual: Initial specification for how the highlight effect shall appear.</span>
+<span class="sd">        :type highlight_visual: VisualSpec</span>
+<span class="sd">        :param grid_visual: Initial specification for how the grid effect shall appear.</span>
+<span class="sd">        :type grid_visual: VisualSpec</span>
+<span class="sd">        :param args: Extra args for the canvas constructor.</span>
+<span class="sd">        :param kwargs: Extra kwargs for the canvas constructor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">master</span><span class="p">,</span>
+                         <span class="n">width</span> <span class="o">*</span> <span class="p">(</span><span class="n">cell_width</span> <span class="o">+</span> <span class="n">column_padding</span><span class="p">),</span>
+                         <span class="n">height</span> <span class="o">*</span> <span class="p">(</span><span class="n">cell_height</span> <span class="o">+</span> <span class="n">row_padding</span><span class="p">),</span>
+                         <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_curr_dockable</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="sd">&quot;&quot;&quot;Stores a reference to the ``DockableMixin`` currently being dragged, if one exists.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_curr_dockable_orig_cell</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="sd">&quot;&quot;&quot;Stores the currently-being-dragged ``DockableMixin``&#39;s cell before the drag initiated.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_curr_cell</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="sd">&quot;&quot;&quot;The top-left ``Cell`` of the group of cells currently being hovered over.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span> <span class="o">=</span> <span class="n">GridState</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;Stores/manages which cells are populated.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dockables</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A dictionary whose keys are all the ``DockableMixin``s registered to this grid and whose values are</span>
+<span class="sd">        ``DockableEntry``s.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span> <span class="o">=</span> <span class="n">GridGeometry</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">cell_width</span><span class="p">,</span> <span class="n">cell_height</span><span class="p">,</span> <span class="n">column_padding</span><span class="p">,</span> <span class="n">row_padding</span><span class="p">)</span>
+        <span class="sd">&quot;&quot;&quot;The grid&#39;s current ``GridGeometry``.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">orig_geometry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span>
+        <span class="sd">&quot;&quot;&quot;Stores the geometry (as a ``GridGeometry``) before any changes from window resizing are made.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resize_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="sd">&quot;&quot;&quot;A ``Size`` tuple to cache the parent window&#39;s width and height while it&#39;s being resized.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resize_after_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stores the callback id for ``Grid._resize_after_callback`` so it may be cancelled when the</span>
+<span class="sd">        ``Grid.resize_protocol`` changes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">highlight_visual</span> <span class="o">=</span> <span class="n">highlight_visual</span>
+        <span class="sd">&quot;&quot;&quot;The current ``VisualSpec`` for the highlighting effect.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid_visual</span> <span class="o">=</span> <span class="n">grid_visual</span>
+        <span class="sd">&quot;&quot;&quot;The current ``VisualSpec`` for the grid drawn while a ``DockableMixin`` is dragged.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">resize_protocol</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        An integer representing the protocol to employ when the parent window is resized such that the grid&#39;s canvas is</span>
+<span class="sd">        granted more space than required by its current scrollregion.</span>
+<span class="sd">        </span>
+<span class="sd">        May be one of the following:</span>
+<span class="sd">            - ``Grid.RESIZE_PROTO_NONE``: Do nothing when the window is resized.</span>
+<span class="sd">            - ``Grid.RESIZE_PROTO_EXPAND_CELLS``: Expand each cell equally to fit any new space when the window is\</span>
+<span class="sd">            resized.</span>
+<span class="sd">            - ``Grid.RESIZE_PROTO_ADD_PADDING``: Add padding equally in between each column or row when the window\</span>
+<span class="sd">            is resized.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_resize_protocol</span><span class="p">(</span><span class="n">resize_protocol</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Grid.register_dockable"><a class="viewcode-back" href="../../api.html#gui.core.Grid.register_dockable">[docs]</a>    <span class="k">def</span> <span class="nf">register_dockable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dockable</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Register a ``DockableMixin`` to be managed by this grid. Its tkinter parent must already be this grid.</span>
+
+<span class="sd">        Registered dockables should never be manually (i.e. ``dockable.configure(...)``) positioned, have their width</span>
+<span class="sd">        and height manually changed, etcetera. Instead use the appropriate methods on ``DockableMixin`` objects.</span>
+
+<span class="sd">        :param dockable: The dockable to be managed by this grid.</span>
+<span class="sd">        :type dockable: DockableMixin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Find an initial position for this dockable.</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_next_empty_cell_group</span><span class="p">(</span><span class="n">dockable</span><span class="o">.</span><span class="n">col_span</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">row_span</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_place_dockable</span><span class="p">(</span><span class="n">dockable</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span>
+        <span class="c1"># Tag the dockable so that scrolling works on it.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tag_widget</span><span class="p">(</span><span class="n">dockable</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Grid.move_dockable"><a class="viewcode-back" href="../../api.html#gui.core.Grid.move_dockable">[docs]</a>    <span class="k">def</span> <span class="nf">move_dockable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dockable</span><span class="p">,</span> <span class="n">cell</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Move the given ``DockableMixin`` ``dockable`` to the given ``Cell`` ``cell``. If there is a grid conflict, this</span>
+<span class="sd">        will fail and no changes will be made.</span>
+
+<span class="sd">        :param dockable: The dockable to move.</span>
+<span class="sd">        :type dockable: DockableMixin</span>
+<span class="sd">        :param cell: The cell to move the dockable to.</span>
+<span class="sd">        :type cell: Cell</span>
+<span class="sd">        :return: Whether or not the move was successful.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">old_cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dockables</span><span class="p">[</span><span class="n">dockable</span><span class="p">]</span><span class="o">.</span><span class="n">cell</span>
+        <span class="n">conflicts_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span><span class="o">.</span><span class="n">conflicts_where</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">col_span</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">row_span</span><span class="p">)</span>
+        <span class="c1"># conflicts_indices stores all the indices of grid conflicts, if any, in columns.</span>
+        <span class="n">conflicts_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">conflicts_array</span><span class="p">))</span>
+        <span class="c1"># Loop over all the conflicts (if there are any) and assure that they take place in the dockable&#39;s previous</span>
+        <span class="c1"># position, since it&#39;s being removed anyway so these conflicts are irrelevant. If any of the conflicts are</span>
+        <span class="c1"># &quot;genuine&quot;, this conditional will not succeed and no changes are made.</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_contained_in</span><span class="p">(</span><span class="n">Cell</span><span class="p">(</span><span class="n">idx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">old_cell</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">col_span</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">row_span</span><span class="p">)</span>
+               <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">conflicts_indices</span><span class="o">.</span><span class="n">T</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_dockable</span><span class="p">(</span><span class="n">dockable</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_place_dockable</span><span class="p">(</span><span class="n">dockable</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="Grid.dockable_resized"><a class="viewcode-back" href="../../api.html#gui.core.Grid.dockable_resized">[docs]</a>    <span class="k">def</span> <span class="nf">dockable_resized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dockable</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Signal to this grid that the ``DockableMixin`` ``dockable``&#39;s ``DockableMixin.col_span`` and/or</span>
+<span class="sd">        ``DockableMixin.row_span`` has been changed, and thus it must be redrawn and its position must be recalculated.</span>
+<span class="sd">        If it must be moved, it will be moved as little as possible. If no where on the grid satisfies its new size, the</span>
+<span class="sd">        grid is expanded horizontally as needed to accommodate the ``dockable``.</span>
+
+<span class="sd">        :param dockable: The dockable that has been resized.</span>
+<span class="sd">        :type dockable: DockableMixin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">old_cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dockables</span><span class="p">[</span><span class="n">dockable</span><span class="p">]</span><span class="o">.</span><span class="n">cell</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_dockable</span><span class="p">(</span><span class="n">dockable</span><span class="p">)</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_next_empty_cell_group</span><span class="p">(</span><span class="n">dockable</span><span class="o">.</span><span class="n">col_span</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">row_span</span><span class="p">,</span> <span class="n">old_cell</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_place_dockable</span><span class="p">(</span><span class="n">dockable</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_place_dockable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dockable</span><span class="p">,</span> <span class="n">cell</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal method to place the ``DockableMixin`` ``dockable`` at the given ``Cell`` ``cell``, populate the</span>
+<span class="sd">        ``Grid._grid_state`` appropriately, and add the ``dockable`` to the ``Grid._dockables`` dictionary. This method</span>
+<span class="sd">        does not check for grid conflicts.</span>
+
+<span class="sd">        :param dockable: The dockable to place.</span>
+<span class="sd">        :type dockable: DockableMixin</span>
+<span class="sd">        :param cell: The cell to place the dockable at.</span>
+<span class="sd">        :type cell: Cell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">col_span</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">row_span</span><span class="p">)</span>
+        <span class="n">bbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_bbox</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">col_span</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">row_span</span><span class="p">)</span>
+        <span class="n">id_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_window</span><span class="p">(</span><span class="n">bbox</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">bbox</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">bbox</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">bbox</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">anchor</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">NW</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">dockable</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dockables</span><span class="p">[</span><span class="n">dockable</span><span class="p">]</span> <span class="o">=</span> <span class="n">DockableEntry</span><span class="p">(</span><span class="n">id_</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Grid.remove_dockable"><a class="viewcode-back" href="../../api.html#gui.core.Grid.remove_dockable">[docs]</a>    <span class="k">def</span> <span class="nf">remove_dockable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dockable</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove the given ``DockableMixin`` ``dockable`` from the grid. This method is functionally the opposite of</span>
+<span class="sd">        ``Grid._place_dockable``.</span>
+
+<span class="sd">        :param dockable: The dockable to remove.</span>
+<span class="sd">        :type dockable: DockableMixin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">id_</span><span class="p">,</span> <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dockables</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">dockable</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">id_</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span><span class="o">.</span><span class="n">unpopulate</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">col_span</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">row_span</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_calc_bbox</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate the bounding box (bbox) in canvas pixels described by the given information.</span>
+
+<span class="sd">        :param cell: The top-left cell of the box.</span>
+<span class="sd">        :type cell: Cell</span>
+<span class="sd">        :param col_span: The width of the box in cells.</span>
+<span class="sd">        :type col_span: int</span>
+<span class="sd">        :param row_span: The height of the box in cells.</span>
+<span class="sd">        :type row_span: int</span>
+<span class="sd">        :return: The calculated bbox.</span>
+<span class="sd">        :rtype: BBox</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">column</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_width</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">column_padding</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">row</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_height</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">row_padding</span><span class="p">)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">col_span</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_width</span> <span class="o">+</span> <span class="p">(</span><span class="n">col_span</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">column_padding</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">row_span</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_height</span> <span class="o">+</span> <span class="p">(</span><span class="n">row_span</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">row_padding</span>
+        <span class="k">return</span> <span class="n">BBox</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_find_next_empty_cell_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">,</span> <span class="n">from_</span><span class="o">=</span><span class="n">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find an unpopulated rectangular group of cells with dimensions ``col_span`` (width) by ``row_span`` (height) and</span>
+<span class="sd">        return the top-left cell coordinate. This method uses the ``Grid._naive_search`` algorithm with ``from_`` as the</span>
+<span class="sd">        origin cell, meaning it will attempt to find the cell group nearest to ``from_``.</span>
+
+<span class="sd">        If such a cell does not exist, the grid is expanded so as to fit such a rectangular group of cells. More</span>
+<span class="sd">        specifically, we first ensure the grid height is greater than or equal to ``row_span``, then we expand the grid</span>
+<span class="sd">        horizontally as few columns as possible so that the specified rectangular group of cells may fit in the</span>
+<span class="sd">        top-right corner of the grid.</span>
+
+<span class="sd">        :param col_span: The width of the unpopulated cell group to find.</span>
+<span class="sd">        :type col_span: int</span>
+<span class="sd">        :param row_span: The height of the unpopulated cell group to find.</span>
+<span class="sd">        :type row_span: int</span>
+<span class="sd">        :param from_: The cell to start the search from.</span>
+<span class="sd">        :type from_: Cell</span>
+<span class="sd">        :return: The coordinate of the top-left cell in the cell group.</span>
+<span class="sd">        :rtype: Cell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># First try to find a preexisting group of cells.</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_naive_search</span><span class="p">(</span><span class="n">from_</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cell</span>
+
+        <span class="c1"># In the event of failing to find a preexisting group of cells, expand the grid.</span>
+        <span class="c1"># First, determine if the height must be increased.</span>
+        <span class="n">new_height</span> <span class="o">=</span> <span class="n">row_span</span> <span class="k">if</span> <span class="n">row_span</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">height</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="c1"># coln will refer to how many columns at the right side of the grid are empty for at least the first row_span</span>
+        <span class="c1"># rows. This way, we need only expand the grid by col_span - coln. How the below line achieves this is left as a</span>
+        <span class="c1"># challenge to the reader :)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">coln</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span><span class="p">[:</span><span class="n">row_span</span><span class="p">,</span> <span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">coln</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Expand the grid according to the newly found width and height.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_geometry</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span> <span class="o">+</span> <span class="n">col_span</span> <span class="o">-</span> <span class="n">coln</span><span class="p">,</span> <span class="n">new_height</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Cell</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="n">col_span</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_naive_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin_cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Search the grid around ``origin_cell`` for a rectangular group of cells with dimensions ``col_span`` (width) by</span>
+<span class="sd">        ``row_span`` (height) and return the top-left cell. The group of cells nearest to ``origin_cell`` is returned,</span>
+<span class="sd">        where nearest is defined as the smallest sum of positive column offset and positive row offset from</span>
+<span class="sd">        ``origin_cell``.</span>
+
+<span class="sd">        :param origin_cell: The cell to search around.</span>
+<span class="sd">        :type origin_cell: Cell</span>
+<span class="sd">        :param col_span: The width of the rectangular group of cells to search for.</span>
+<span class="sd">        :type col_span: int</span>
+<span class="sd">        :param row_span: The height of the rectangular group of cells to search for.</span>
+<span class="sd">        :type row_span: int</span>
+<span class="sd">        :return: The top-left cell in the group or None if no such group of cells can be found.</span>
+<span class="sd">        :type: Cell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">col</span><span class="p">,</span> <span class="n">row</span> <span class="o">=</span> <span class="n">origin_cell</span>
+        <span class="n">lco</span> <span class="o">=</span> <span class="o">-</span><span class="n">col</span>  <span class="c1"># Lower Column Offset limit</span>
+        <span class="n">uco</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="n">col</span> <span class="o">-</span> <span class="n">col_span</span>  <span class="c1"># Upper Column Offset limit</span>
+        <span class="n">lro</span> <span class="o">=</span> <span class="o">-</span><span class="n">row</span>  <span class="c1"># Lower Row Offset limit</span>
+        <span class="n">uro</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">row</span> <span class="o">-</span> <span class="n">row_span</span>  <span class="c1"># Upper Row Offset limit</span>
+        <span class="c1"># Gradually increase the search radius, mag(nitude). mag = 0 corresponds to the origin_cell itself; mag = 1</span>
+        <span class="c1"># corresponds to the 8 cells around the origin cell; mag = 2 corresponds to the 16 cells around those 8 cells;</span>
+        <span class="c1"># etc.</span>
+        <span class="k">for</span> <span class="n">mag</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="n">col</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">row</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
+            <span class="c1"># This generates all the valid offsets from the origin_cell as (c, r) two-tuples for a given mag.</span>
+            <span class="n">offsets</span> <span class="o">=</span> <span class="p">((</span><span class="n">c</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">mag</span><span class="p">,</span> <span class="n">mag</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">mag</span><span class="p">,</span> <span class="n">mag</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                       <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">+</span> <span class="nb">abs</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">mag</span> <span class="k">if</span> <span class="n">lco</span> <span class="o">&lt;=</span> <span class="n">c</span> <span class="o">&lt;=</span> <span class="n">uco</span> <span class="k">if</span> <span class="n">lro</span> <span class="o">&lt;=</span> <span class="n">r</span> <span class="o">&lt;=</span> <span class="n">uro</span><span class="p">)</span>
+            <span class="c1"># Sort the offsets based on their absolute sum so that we can return the nearest group of cells.</span>
+            <span class="k">for</span> <span class="n">c_offset</span><span class="p">,</span> <span class="n">r_offset</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">offsets</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">o</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="nb">abs</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+                <span class="n">candidate</span> <span class="o">=</span> <span class="n">Cell</span><span class="p">(</span><span class="n">col</span> <span class="o">+</span> <span class="n">c_offset</span><span class="p">,</span> <span class="n">row</span> <span class="o">+</span> <span class="n">r_offset</span><span class="p">)</span>
+                <span class="c1"># Only return the candidate cell if it has no grid conflicts</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span><span class="o">.</span><span class="n">conflicts</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">candidate</span>
+
+<div class="viewcode-block" id="Grid.signal_drag_start"><a class="viewcode-back" href="../../api.html#gui.core.Grid.signal_drag_start">[docs]</a>    <span class="k">def</span> <span class="nf">signal_drag_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dockable</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called by the ``DockableMixin`` dockable widget to signal that it is being dragged.</span>
+
+<span class="sd">        :param dockable: The dockable who&#39;s being dragged.</span>
+<span class="sd">        :type dockable: DockableMixin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_draw_grid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_curr_dockable</span> <span class="o">=</span> <span class="n">dockable</span>
+        <span class="n">id_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_curr_dockable_orig_cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dockables</span><span class="p">[</span><span class="n">dockable</span><span class="p">]</span>
+        <span class="c1"># The x and y coordinates must be captured before the dockable is removed!</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="p">(</span><span class="n">id_</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_dockable</span><span class="p">(</span><span class="n">dockable</span><span class="p">)</span>
+        <span class="c1"># Despite the user not actually moving the mouse, call signal_drag_motion so that the highlight appears on the</span>
+        <span class="c1"># grid.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signal_drag_motion</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Grid.signal_drag_stop"><a class="viewcode-back" href="../../api.html#gui.core.Grid.signal_drag_stop">[docs]</a>    <span class="k">def</span> <span class="nf">signal_drag_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called by a ``DockableMixin`` widget to signal that it has stopped being dragged.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clear_grid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clear_highlight</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_curr_cell</span><span class="p">:</span>
+            <span class="c1"># If the user released the drag in a valid position, used this new position for the dockable&#39;s position.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_place_dockable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_curr_dockable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_curr_cell</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_curr_cell</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If the user released the drag in a invalid position, revert to the dockable&#39;s old position.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_place_dockable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_curr_dockable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_curr_dockable_orig_cell</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_curr_dockable</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_curr_dockable_orig_cell</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Grid.signal_drag_motion"><a class="viewcode-back" href="../../api.html#gui.core.Grid.signal_drag_motion">[docs]</a>    <span class="k">def</span> <span class="nf">signal_drag_motion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mouse_x</span><span class="p">,</span> <span class="n">mouse_y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called by a ``DockableMixin`` widget currently being dragged to signal that the mouse has moved.</span>
+
+<span class="sd">        :param mouse_x: The mouse&#39;s x coordinate relative to the root widget.</span>
+<span class="sd">        :type mouse_x: int</span>
+<span class="sd">        :param mouse_y: The mouse&#39;s y coordinate relative to the root widget.</span>
+<span class="sd">        :type mouse_y: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clear_highlight</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_curr_cell</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Find the cell over which the cursor has moved to.</span>
+        <span class="c1"># Note the calls to canvasx and canvasy; these are necessary since the canvas is scrollable and the mouse_x and</span>
+        <span class="c1"># mouse_y coordinates are relative to the root window, not the canvas.</span>
+        <span class="n">col</span><span class="p">,</span> <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_nearest_cell</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">canvasx</span><span class="p">(</span><span class="n">mouse_x</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">canvasy</span><span class="p">(</span><span class="n">mouse_y</span><span class="p">))</span>
+        <span class="c1"># Alias the col and row span for conciseness.</span>
+        <span class="n">col_span</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_curr_dockable</span><span class="o">.</span><span class="n">col_span</span>
+        <span class="n">row_span</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_curr_dockable</span><span class="o">.</span><span class="n">row_span</span>
+
+        <span class="c1"># If the column and row are too big or too small (i.e. the dockable wouldn&#39;t fit in the grid at this cell</span>
+        <span class="c1"># regardless of grid conflicts), clamp them down to the maximums/minimums.</span>
+        <span class="n">max_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="n">col_span</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="o">&gt;</span> <span class="n">max_col</span><span class="p">:</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="n">max_col</span>
+        <span class="k">elif</span> <span class="n">col</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">max_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">row_span</span>
+        <span class="k">if</span> <span class="n">row</span> <span class="o">&gt;</span> <span class="n">max_row</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="n">max_row</span>
+        <span class="k">elif</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Note that this search should never return None since the dockable can at least return to its previous</span>
+        <span class="c1"># position.</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_naive_search</span><span class="p">(</span><span class="n">Cell</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">),</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_highlight</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_curr_cell</span> <span class="o">=</span> <span class="n">cell</span></div>
+
+    <span class="k">def</span> <span class="nf">_find_nearest_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal method to find the ``Cell`` nearest to the given ``x`` and ``y`` coordinates relative to the canvas.</span>
+
+<span class="sd">        :param x: The x coordinate relative to the canvas.</span>
+<span class="sd">        :type x: int</span>
+<span class="sd">        :param y: The y coordinate relative to the canvas.</span>
+<span class="sd">        :type y: int</span>
+<span class="sd">        :return: The closest cell.</span>
+<span class="sd">        :rtype: Cell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="n">x</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_width</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">column_padding</span><span class="p">)</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="n">y</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_height</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">row_padding</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Cell</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">col</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Grid.set_geometry"><a class="viewcode-back" href="../../api.html#gui.core.Grid.set_geometry">[docs]</a>    <span class="k">def</span> <span class="nf">set_geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">cell_width</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cell_height</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">column_padding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">row_padding</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Request the grid&#39;s geometry (``Grid.geometry``) to be changed.</span>
+
+<span class="sd">        Note that ``cell_width`` and ``cell_height`` have minimums, and, in the event that a requested change to them</span>
+<span class="sd">        violates these minimums, they will be clamped greater than the minimums. The minimums are</span>
+<span class="sd">        ``Grid.MIN_CELL_WIDTH`` and ``Grid.MIN_CELL_HEIGHT``.</span>
+
+<span class="sd">        Also, ``width`` and ``height`` cannot be changed so as to &quot;clip off&quot; any ``DockableMixin``s on the grid.</span>
+<span class="sd">        Therefore, once again, the ``width`` and ``height`` will be clamped to be greater than the minimum width and</span>
+<span class="sd">        height of the grid state (``GridState.min_width`` and ``GridState.min_height``).</span>
+
+<span class="sd">        To check if any of the requested new dimensions have been denied, consult the returned ``GridGeometry`` object,</span>
+<span class="sd">        which contains the geometries actually deployed.</span>
+
+<span class="sd">        :param width: The new width of the grid, or None for no change.</span>
+<span class="sd">        :type width: int</span>
+<span class="sd">        :param height: The new height of the grid, or None for no change.</span>
+<span class="sd">        :type height: int</span>
+<span class="sd">        :param cell_width: The new cell width of the grid, or None for no change.</span>
+<span class="sd">        :type cell_width: int</span>
+<span class="sd">        :param cell_height: The new cell height of the grid, or None for no change.</span>
+<span class="sd">        :type cell_height: int</span>
+<span class="sd">        :param column_padding: The new column padding of the grid, or None for no change.</span>
+<span class="sd">        :type column_padding: int</span>
+<span class="sd">        :param row_padding: The new row padding of the grid, or None for no change.</span>
+<span class="sd">        :type row_padding: int</span>
+<span class="sd">        :return: The new ``GridGeometry`` object.</span>
+<span class="sd">        :rtype: GridGeometry</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Boolean to indicate if the dockables&#39; geometries must be recalculated.</span>
+        <span class="n">invalid_dockable_geom</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">cell_width</span> <span class="ow">or</span> <span class="n">cell_height</span> <span class="ow">or</span> <span class="n">column_padding</span> <span class="ow">or</span> <span class="n">row_padding</span><span class="p">:</span>
+            <span class="n">invalid_dockable_geom</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Boolean to indicate if the grid state must be reconsidered.</span>
+        <span class="n">invalid_state_size</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">width</span> <span class="ow">or</span> <span class="n">height</span><span class="p">:</span>
+            <span class="n">invalid_state_size</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Since polling the min width and height is somewhat expensive, we only do it if a new width or height is</span>
+        <span class="c1"># actually given.</span>
+        <span class="k">if</span> <span class="n">width</span> <span class="ow">and</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span><span class="o">.</span><span class="n">min_width</span><span class="p">:</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span><span class="o">.</span><span class="n">min_width</span>
+        <span class="k">if</span> <span class="n">height</span> <span class="ow">and</span> <span class="n">height</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span><span class="o">.</span><span class="n">min_height</span><span class="p">:</span>
+            <span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span><span class="o">.</span><span class="n">min_height</span>
+        <span class="c1"># Notice the use of &quot;or&quot; here so that width and height may not be zero by accident.</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">width</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="n">height</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">height</span>
+
+        <span class="n">cell_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clamp</span><span class="p">(</span><span class="n">cell_width</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MIN_CELL_WIDTH</span><span class="p">)</span>
+        <span class="n">cell_height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clamp</span><span class="p">(</span><span class="n">cell_height</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_height</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MIN_CELL_HEIGHT</span><span class="p">)</span>
+
+        <span class="c1"># Notice the none checks instead of simply &quot;or&quot;: the paddings are allow to be zero.</span>
+        <span class="n">column_padding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">column_padding</span> <span class="k">if</span> <span class="n">column_padding</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">column_padding</span>
+        <span class="n">row_padding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">row_padding</span> <span class="k">if</span> <span class="n">row_padding</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">row_padding</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">orig_geometry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span> <span class="o">=</span> <span class="n">GridGeometry</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span>
+                                                          <span class="n">cell_width</span><span class="p">,</span> <span class="n">cell_height</span><span class="p">,</span>
+                                                          <span class="n">column_padding</span><span class="p">,</span> <span class="n">row_padding</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resize_scroll_region</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_width</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">column_padding</span><span class="p">),</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_height</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">row_padding</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">invalid_state_size</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_state_size</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">invalid_dockable_geom</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_dockable_geometry</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span></div>
+
+    <span class="k">def</span> <span class="nf">_update_state_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the size of the grid state to the given ``width`` and ``height``.</span>
+
+<span class="sd">        Note that simply doing</span>
+<span class="sd">        ::</span>
+<span class="sd">            self._grid_state.resize(height, width)</span>
+
+<span class="sd">        will not suffice since the data stored in the grid state gets disordered.</span>
+
+<span class="sd">        :param width: The new width.</span>
+<span class="sd">        :type width: int</span>
+<span class="sd">        :param height: The new height.</span>
+<span class="sd">        :type height: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span> <span class="o">=</span> <span class="n">GridState</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+        <span class="c1"># Repopulate the state with all the dockables.</span>
+        <span class="k">for</span> <span class="n">dockable</span><span class="p">,</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dockables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_grid_state</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">col_span</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">row_span</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_dockable_geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the geometry of each ``DockableMixin`` managed by this grid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">dockable</span><span class="p">,</span> <span class="p">(</span><span class="n">id_</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dockables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">bbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_bbox</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">col_span</span><span class="p">,</span> <span class="n">dockable</span><span class="o">.</span><span class="n">row_span</span><span class="p">)</span>
+            <span class="c1"># Reset the size.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">itemconfig</span><span class="p">(</span><span class="n">id_</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">bbox</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">bbox</span><span class="o">.</span><span class="n">h</span><span class="p">)</span>
+            <span class="n">old_x</span><span class="p">,</span> <span class="n">old_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="p">(</span><span class="n">id_</span><span class="p">)</span>
+            <span class="c1"># Reset the position.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">id_</span><span class="p">,</span> <span class="n">bbox</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">old_x</span><span class="p">,</span> <span class="n">bbox</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">old_y</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Grid.set_resize_protocol"><a class="viewcode-back" href="../../api.html#gui.core.Grid.set_resize_protocol">[docs]</a>    <span class="k">def</span> <span class="nf">set_resize_protocol</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">protocol</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the resize protocol (``Grid.resize_protocol``) to the given one.</span>
+
+<span class="sd">        :param protocol: The resize protocol to employ.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resize_protocol</span> <span class="o">=</span> <span class="n">protocol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orig_geometry</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resize_protocol</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">RESIZE_PROTO_NONE</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="s2">&quot;&lt;Configure&gt;&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resize_after_id</span><span class="p">:</span>
+                <span class="c1"># Cancel a resize callback, should one exist, since the changed resize_protocol would mess it up.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">after_cancel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resize_after_id</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_resize_after_id</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="c1"># Update the dockable geometry in case the protocol was change while the window is expanded.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_dockable_geometry</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;Configure&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resize_bind_callback</span><span class="p">)</span>
+            <span class="c1"># Simulate a resize callback once in case the protocol was change while the window is expanded.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_resize_data</span> <span class="o">=</span> <span class="n">Size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">winfo_width</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">winfo_height</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_resize_after_callback</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Grid.set_highlight_visual"><a class="viewcode-back" href="../../api.html#gui.core.Grid.set_highlight_visual">[docs]</a>    <span class="k">def</span> <span class="nf">set_highlight_visual</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bd_width</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bd_colour</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set one or more of the visual aspects of the highlighting effect.</span>
+
+<span class="sd">        :param bd_width: The new border width, or None for no change.</span>
+<span class="sd">        :param bd_colour: The new border colour, or None for no change.</span>
+<span class="sd">        :param fill: The new fill colour, or None for no change.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bd_width</span> <span class="o">=</span> <span class="n">bd_width</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">highlight_visual</span><span class="o">.</span><span class="n">bd_width</span>
+        <span class="n">bd_colour</span> <span class="o">=</span> <span class="n">bd_colour</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">highlight_visual</span><span class="o">.</span><span class="n">bd_colour</span>
+        <span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">highlight_visual</span><span class="o">.</span><span class="n">fill</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">highlight_visual</span> <span class="o">=</span> <span class="n">VisualSpec</span><span class="p">(</span><span class="n">bd_width</span><span class="p">,</span> <span class="n">bd_colour</span><span class="p">,</span> <span class="n">fill</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Grid.set_grid_visual"><a class="viewcode-back" href="../../api.html#gui.core.Grid.set_grid_visual">[docs]</a>    <span class="k">def</span> <span class="nf">set_grid_visual</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bd_width</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bd_colour</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set one or more of the visual aspects of the grid effect.</span>
+
+<span class="sd">        :param bd_width: The new border width, or None for no change.</span>
+<span class="sd">        :param bd_colour: The new border colour, or None for no change.</span>
+<span class="sd">        :param fill: The new fill colour, or None for no change.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bd_width</span> <span class="o">=</span> <span class="n">bd_width</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_visual</span><span class="o">.</span><span class="n">bd_width</span>
+        <span class="n">bd_colour</span> <span class="o">=</span> <span class="n">bd_colour</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_visual</span><span class="o">.</span><span class="n">bd_colour</span>
+        <span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_visual</span><span class="o">.</span><span class="n">fill</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid_visual</span> <span class="o">=</span> <span class="n">VisualSpec</span><span class="p">(</span><span class="n">bd_width</span><span class="p">,</span> <span class="n">bd_colour</span><span class="p">,</span> <span class="n">fill</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_draw_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draw the grid rectangles on the canvas. One rectangle is drawn for each cell.&quot;&quot;&quot;</span>
+        <span class="c1"># TODO: The grid rectangles needn&#39;t be redrawn every time; they could be cached and invalidated when geometry is reset.</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_width</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">column_padding</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_height</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">row_padding</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dx</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dy</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_rectangle</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_width</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_height</span><span class="p">,</span>
+                                      <span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_visual</span><span class="o">.</span><span class="n">bd_width</span><span class="p">,</span>
+                                      <span class="n">outline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_visual</span><span class="o">.</span><span class="n">bd_colour</span><span class="p">,</span>
+                                      <span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_visual</span><span class="o">.</span><span class="n">fill</span><span class="p">,</span>
+                                      <span class="n">tag</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TAG_GRIDLINE</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_clear_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear the grid lines on the canvas, should they exist.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TAG_GRIDLINE</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_highlight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Draw a highlighting rectangle with its upper-left cell located at ``cell``, width in cells equal to</span>
+<span class="sd">        ``col_span``, and height in cells equal to ``row_span``.</span>
+
+<span class="sd">        :param cell: The top-left cell.</span>
+<span class="sd">        :type cell: Cell</span>
+<span class="sd">        :param col_span: The width in cells.</span>
+<span class="sd">        :type col_span: int</span>
+<span class="sd">        :param row_span: The height in cells.</span>
+<span class="sd">        :type row_span: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_bbox</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">)</span>
+        <span class="c1"># Draw the rectangle. The +- constants on each coordinate was empirically determined to produce the best-looking</span>
+        <span class="c1"># rectangle within the grid lines.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_rectangle</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">h</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                              <span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">highlight_visual</span><span class="o">.</span><span class="n">bd_width</span><span class="p">,</span>
+                              <span class="n">outline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">highlight_visual</span><span class="o">.</span><span class="n">bd_colour</span><span class="p">,</span>
+                              <span class="n">fill</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">highlight_visual</span><span class="o">.</span><span class="n">fill</span><span class="p">,</span>
+                              <span class="n">tag</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TAG_HIGHLIGHT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_clear_highlight</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear the highlight rectangle on the canvas, should it exist.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TAG_HIGHLIGHT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_resize_bind_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A callback for resize events. Instead of resetting the geometry (which is somewhat expensive) upon every resize</span>
+<span class="sd">        event, we schedule a callback to ``Grid._resize_after_callback`` every ``Grid.RESIZE_UPDATE_DELAY``</span>
+<span class="sd">        milliseconds, but cache the new width and height every resize event.</span>
+
+<span class="sd">        :param event: The tk event object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Only schedule a callback if one isn&#39;t already scheduled (_resize_data is None when no callback is scheduled.)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resize_data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_resize_after_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">RESIZE_UPDATE_DELAY</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resize_after_callback</span><span class="p">)</span>
+        <span class="c1"># Always, however, update _resize_data with the new width and height from the event.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resize_data</span> <span class="o">=</span> <span class="n">Size</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_resize_after_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called every ``Grid.RESIZE_UPDATE_DELAY`` if the user is actively changing the size of the parent window.&quot;&quot;&quot;</span>
+        <span class="c1"># Whether the geometry in the x direction should change.</span>
+        <span class="n">resize_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_resize_x</span><span class="p">()</span>
+        <span class="c1"># Whether the geometry in the y direction should change.</span>
+        <span class="n">resize_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_resize_y</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">resize_x</span> <span class="ow">or</span> <span class="n">resize_y</span><span class="p">:</span>
+            <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">cw</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">rp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orig_geometry</span>
+
+            <span class="k">if</span> <span class="n">resize_x</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resize_protocol</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">RESIZE_PROTO_EXPAND_CELLS</span><span class="p">:</span>
+                    <span class="n">cw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resize_data</span><span class="o">.</span><span class="n">width</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span>
+                <span class="c1"># Note the greater than 1 check, which avoids ZeroDivisionErrors</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">resize_protocol</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">RESIZE_PROTO_ADD_PADDING</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">cp</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resize_data</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_width</span><span class="p">)</span> \
+                         <span class="o">//</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set_resize_protocol</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">RESIZE_PROTO_NONE</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid resize protocol; setting resize protocol to RESIZE_PROTO_NONE&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">resize_y</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resize_protocol</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">RESIZE_PROTO_EXPAND_CELLS</span><span class="p">:</span>
+                    <span class="n">ch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resize_data</span><span class="o">.</span><span class="n">height</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">height</span>
+                <span class="c1"># Note the greater than 1 check, which avoids ZeroDivisionErrors</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">resize_protocol</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">RESIZE_PROTO_ADD_PADDING</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">height</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">rp</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resize_data</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">cell_height</span><span class="p">)</span> \
+                         <span class="o">//</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set_resize_protocol</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">RESIZE_PROTO_NONE</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid resize protocol; setting resize protocol to RESIZE_PROTO_NONE&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span> <span class="o">=</span> <span class="n">GridGeometry</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">cw</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">rp</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_dockable_geometry</span><span class="p">()</span>
+        <span class="c1"># If neither the x or y directions need to be changed according to the window size, make sure the orig_geometry</span>
+        <span class="c1"># (i.e. the geometry originally set manually by the user) is in use.</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orig_geometry</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orig_geometry</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_dockable_geometry</span><span class="p">()</span>
+
+        <span class="c1"># Set _resize_data to None to indicate that the data in it has been applied to the grid&#39;s geometry and now a new</span>
+        <span class="c1"># callback to this method may be scheduled.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resize_data</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_should_resize_x</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :return: Whether the grid should be resized in the x direction in accordance with the window size.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># The x scroll bar will be maxed out if the space allocated to the grid is greater than the width of the</span>
+        <span class="c1"># scrollregion, and hence this may be used as an indicator for when the grid should be resized in the x</span>
+        <span class="c1"># direction in accordance with the window size.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_scrollbar</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_SCROLLBAR_POS</span>
+
+    <span class="k">def</span> <span class="nf">_should_resize_y</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :return: Whether the grid should be resized in the y direction in accordance with the window size.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># The y scroll bar will be maxed out if the space allocated to the grid is greater than the height of the</span>
+        <span class="c1"># scrollregion, and hence this may be used as an indicator for when the grid should be resized in the y</span>
+        <span class="c1"># direction in accordance with the window size.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_scrollbar</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">MAX_SCROLLBAR_POS</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_contained_in</span><span class="p">(</span><span class="n">query_cell</span><span class="p">,</span> <span class="n">containing_cell</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check whether ``query_cell`` is contained in the rectangle described by ``containing_cell``, ``col_span``,</span>
+<span class="sd">        and ``row_span``.</span>
+
+<span class="sd">        :param query_cell: The cell to check for containment in the rectangle.</span>
+<span class="sd">        :type query_cell: Cell</span>
+<span class="sd">        :param containing_cell: The top-left cell in the rectangle.</span>
+<span class="sd">        :type containing_cell: Cell</span>
+<span class="sd">        :param col_span: The width in cells of the rectangle.</span>
+<span class="sd">        :type col_span: int</span>
+<span class="sd">        :param row_span: The height in cells of the rectangle.</span>
+<span class="sd">        :type row_span: int</span>
+<span class="sd">        :return: Whether ``query_cell`` is in the rectangle described by the given information.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">col</span><span class="p">,</span> <span class="n">row</span> <span class="o">=</span> <span class="n">query_cell</span>
+        <span class="n">ccol</span><span class="p">,</span> <span class="n">crow</span> <span class="o">=</span> <span class="n">containing_cell</span>
+        <span class="k">return</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ccol</span><span class="p">,</span> <span class="n">ccol</span> <span class="o">+</span> <span class="n">col_span</span><span class="p">)</span> <span class="ow">and</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">crow</span><span class="p">,</span> <span class="n">crow</span> <span class="o">+</span> <span class="n">row_span</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_clamp</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">min_</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper method to clamp a positive number ``n`` to greater than ``min_``.</span>
+
+<span class="sd">        :param n: The number to clamp.</span>
+<span class="sd">        :param min_: The lower bound on n.</span>
+<span class="sd">        :return: The clamped number.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">n</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="n">min_</span> <span class="k">else</span> <span class="n">min_</span></div>
+
+
+<div class="viewcode-block" id="Window"><a class="viewcode-back" href="../../api.html#gui.core.Window">[docs]</a><span class="k">class</span> <span class="nc">Window</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="p">):</span>
+    <span class="c1"># TODO: init_... methods...?</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">init_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;grid has already been initialized&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">Grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">BOTH</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span></div>
+
+
+<span class="k">class</span> <span class="nc">DockableMixin</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_grid</span><span class="p">,</span> <span class="n">col_span</span><span class="p">,</span> <span class="n">row_span</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent_grid</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_grid</span> <span class="o">=</span> <span class="n">parent_grid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">col_span</span> <span class="o">=</span> <span class="n">col_span</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">row_span</span> <span class="o">=</span> <span class="n">row_span</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;Button-1&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_drag_start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;ButtonRelease-1&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_drag_stop</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;B1-Motion&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_drag_motion</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_drag_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_grid</span><span class="o">.</span><span class="n">signal_drag_start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_drag_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_grid</span><span class="o">.</span><span class="n">signal_drag_stop</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">on_drag_motion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_grid</span><span class="o">.</span><span class="n">signal_drag_motion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">winfo_x</span><span class="p">()</span> <span class="o">+</span> <span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">winfo_y</span><span class="p">()</span> <span class="o">+</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">move_dockable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent_grid</span><span class="o">.</span><span class="n">move_dockable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Cell</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">resize_dockable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col_span</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">row_span</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">col_span</span> <span class="o">=</span> <span class="n">col_span</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">col_span</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">row_span</span> <span class="o">=</span> <span class="n">row_span</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">row_span</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_grid</span><span class="o">.</span><span class="n">dockable_resized</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">disable_binds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="s2">&quot;&lt;Button-1&gt;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="s2">&quot;&lt;ButtonRelease-1&gt;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="s2">&quot;&lt;B1-Motion&gt;&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">enable_binds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;Button-1&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_drag_start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;ButtonRelease-1&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_drag_stop</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;B1-Motion&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_drag_motion</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DragPoint"><a class="viewcode-back" href="../../api.html#gui.core.DragPoint">[docs]</a><span class="k">class</span> <span class="nc">DragPoint</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">Frame</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dockable</span><span class="p">,</span> <span class="n">master</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unbind_parent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">master</span> <span class="ow">or</span> <span class="n">dockable</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dockable</span> <span class="o">=</span> <span class="n">dockable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;Button-1&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_drag_start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;ButtonRelease-1&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_drag_stop</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;B1-Motion&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_drag_motion</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">unbind_parent</span><span class="p">:</span>
+            <span class="n">dockable</span><span class="o">.</span><span class="n">disable_binds</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">on_drag_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dockable</span><span class="o">.</span><span class="n">on_drag_start</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_drag_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dockable</span><span class="o">.</span><span class="n">on_drag_stop</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">on_drag_motion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dockable</span><span class="o">.</span><span class="n">on_drag_motion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fix_event</span><span class="p">(</span><span class="n">event</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_fix_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">winfo_x</span><span class="p">()</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">winfo_y</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">event</span></div>
+
+
+<span class="k">class</span> <span class="nc">GuiManager</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prog_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Tk</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">withdraw</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prog_name</span> <span class="o">=</span> <span class="n">prog_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">windows</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">async_mainloop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+                <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">tk</span><span class="o">.</span><span class="n">TclError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Tkinter error occurred.&quot;</span><span class="p">)</span>  <span class="c1"># TODO: Temp?</span>
+
+    <span class="k">def</span> <span class="nf">new_win</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">win</span> <span class="o">=</span> <span class="n">Window</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_next_win_num</span><span class="p">()</span>
+        <span class="n">win</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prog_name</span> <span class="o">+</span> <span class="s2">&quot; (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">windows</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">win</span>
+        <span class="k">return</span> <span class="n">win</span>
+
+    <span class="k">def</span> <span class="nf">_get_next_win_num</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">windows</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">n</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">spooky-console</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Robert Russell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
