@@ -6,6 +6,7 @@ TODO
 import click
 import pycmds
 from pycmds.utils import DotDict
+from networktables.instance import NetworkTablesInstance
 from networktables.networktables import NetworkTables
 
 
@@ -28,6 +29,21 @@ def str_to_bool(string):
         return False
     else:
         raise ValueError(BOOLEAN_CONV_FAIL_MSG.format(string))
+
+
+def type_constant_to_str(kind):
+    if kind == NetworkTablesInstance.EntryTypes.BOOLEAN:
+        return "BOOLEAN"
+    elif kind == NetworkTablesInstance.EntryTypes.DOUBLE:
+        return "DOUBLE"
+    elif kind == NetworkTablesInstance.EntryTypes.STRING:
+        return "STRING"
+    elif kind == NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY:
+        return "BOOLEAN_ARRAY"
+    elif kind == NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY:
+        return "DOUBLE_ARRAY"
+    else:  # kind == NetworkTablesInstance.EntryTypes.STRING_ARRAY:
+        return "STRING_ARRAY"
 
 
 class NTPath:

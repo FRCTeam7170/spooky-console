@@ -726,6 +726,7 @@ class Grid(ScrollCanvas):
 
         :param event: The tk event object.
         """
+        # TODO: Turn this caching functionality into a decorator so it may be reused?
         # Only schedule a callback if one isn't already scheduled (_resize_data is None when no callback is scheduled.)
         if not self._resize_data:
             self._resize_after_id = self.after(self.RESIZE_UPDATE_DELAY, self._resize_after_callback)

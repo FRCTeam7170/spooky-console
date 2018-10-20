@@ -8,7 +8,6 @@ import click
 from networktables.networktables import NetworkTables
 import tabulate
 from .. import ntutils
-from networktables.instance import NetworkTablesInstance
 
 
 _BOOLEAN = 0
@@ -96,19 +95,6 @@ list_aliases = ["ls", "dir"]
 @click.option("kind", "--type/--no-type", "-T/ ", default=False)
 @click.pass_context
 def list_(ctx, path, recurse, output, value, kind):
-    def type_constant_to_str(kind):
-        if kind == NetworkTablesInstance.EntryTypes.BOOLEAN:
-            return "BOOLEAN"
-        elif kind == NetworkTablesInstance.EntryTypes.DOUBLE:
-            return "DOUBLE"
-        elif kind == NetworkTablesInstance.EntryTypes.STRING:
-            return "STRING"
-        elif kind == NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY:
-            return "BOOLEAN_ARRAY"
-        elif kind == NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY:
-            return "DOUBLE_ARRAY"
-        else:  # kind == NetworkTablesInstance.EntryTypes.STRING_ARRAY:
-            return "STRING_ARRAY"
 
     if path is None:
         path = ctx.obj["nt_current_path"]
@@ -118,25 +104,19 @@ def list_(ctx, path, recurse, output, value, kind):
     find_entries = output in ("entries", "both")
     find_tables = output in ("tables", "both")
     table = NetworkTables.getTable(path)
-    keys = table.getKeys()
     items = []
-    for key in keys:
-        if not table.containsSubTable(key):
-            if find_entries:
-                items.append(ListElement(True, key, table))
-        elif find_tables or recurse:
-            items.append(ListElement(False, key, table))
+    if find_entries:
+        items.extend((ListElement(True, key, table) for key in table.getKeys()))
+    if find_tables or recurse:
+        items.extend((ListElement(False, key, table) for key in table.getSubTables()))
     if recurse:
         for item in items:
             if item.is_entry:
                 continue
             subtable = item.parent.getSubTable(item.key)
-            keys = subtable.getKeys()
-            for key in keys:
-                if not subtable.containsSubTable(key) and find_entries:
-                    items.append(ListElement(True, key, subtable))
-                else:
-                    items.append(ListElement(False, key, subtable))
+            if find_entries:
+                items.extend((ListElement(True, key, subtable) for key in subtable.getKeys()))
+            items.extend((ListElement(False, key, subtable) for key in subtable.getSubTables()))
 
     item_type_column = output == "both"
 
@@ -159,7 +139,7 @@ def list_(ctx, path, recurse, output, value, kind):
             if value:
                 row.append(item.parent.getEntry(item.key).value)
             if kind:
-                row.append(type_constant_to_str(item.parent.getEntry(item.key).type))
+                row.append(ntutils.type_constant_to_str(item.parent.getEntry(item.key).type))
         elif find_tables:
             if item_type_column:
                 row.append("T")
