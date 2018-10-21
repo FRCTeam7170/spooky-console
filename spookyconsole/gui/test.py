@@ -1,11 +1,12 @@
 
+from spookyconsole.gui import style
+style.patch_tk_widgets()
+
 from spookyconsole.gui import core
 from spookyconsole.gui import plot
 from spookyconsole.gui import widgets
 from spookyconsole import utils
 import math
-import matplotlib.style as s
-print(s.available)
 
 
 def clamping_tan(val, max_):
@@ -18,11 +19,13 @@ def clamping_tan(val, max_):
 
 
 gui = core.GuiManager("Plot Tests")
-win = gui.new_win()
-win.protocol("WM_DELETE_WINDOW", gui.root.destroy)
-win.init_grid(10, 10).set_resize_protocol(core.Grid.RESIZE_PROTO_ADD_PADDING)
+with style.stylize(gui.root, troughcolor=style.GRAY_SCALE_4, active_fg="blue"):
+    print(style.GLOBAL_STYLE)
+    win = gui.new_win()
+    win.protocol("WM_DELETE_WINDOW", gui.root.destroy)
+    win.init_grid(10, 10).set_resize_protocol(core.Grid.RESIZE_PROTO_ADD_PADDING)
 
-win.grid.register_dockable(widgets.DockableGyro(win.grid, 2, 2))
+    win.grid.register_dockable(widgets.DockableGyro(win.grid, 2, 2))
 
 """
 p1 = plot.DockablePlot(win.grid, style="ggplot")

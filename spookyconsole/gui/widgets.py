@@ -244,6 +244,9 @@ class TableSim:
 class NTBrowser(tk.Frame):
 
     PARENT_DIR = ".."
+    TABLE_FORMAT = "[T] {}"
+    ENTRY_FORMAT = "[E] {}"
+    BLANK = "-"
     SCROLL_SCALE = 1/120
 
     class EntryPopup(tk.Toplevel):
@@ -272,23 +275,57 @@ class NTBrowser(tk.Frame):
             data.grid(row=1, column=1, sticky=tk.NSEW)
 
     def __init__(self, master, root_table, *args, **kwargs):
+        # TODO: Provide access to anonymous labels?
         super().__init__(master, *args, **kwargs)
         self.root_table = root_table
         self.hierarchy = deque((root_table,))
+        self._last_table_idx = None
+        self._items = []
+        self._curr_indices = None
 
         self.scrollbar = tk.Scrollbar(self, command=self._merged_yview)
         self.key_listbox = tk.Listbox(self, selectmode=tk.EXTENDED, yscrollcommand=self.scrollbar.set)
         self.value_listbox = tk.Listbox(self, selectmode=tk.EXTENDED, yscrollcommand=self.scrollbar.set)
-        self.entry = tk.Entry(self)
 
-        self.key_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.value_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.scrollbar.pack(side=tk.LEFT, fill=tk.Y)
+        search_frame = tk.Frame(self)
+        self.search_entry = tk.Entry(search_frame)
+        self.search_button = tk.Button(search_frame, command=self._search_callback, text="Enter")
+
+        insert_frame = tk.Frame(self)
+        validate_callback = self.register(self._validate_insert_entry)
+        self.insert_entry = tk.Entry(insert_frame, validate=tk.ALL, vcmd=(validate_callback, "%P"), state=tk.DISABLED)
+        self.insert_button = tk.Button(insert_frame, command=self._insert_callback, text="Enter")
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+
+        tk.Label(self, text="KEY").grid(row=0, column=0, sticky=tk.NSEW)
+        tk.Label(self, text="VALUE").grid(row=0, column=1, sticky=tk.NSEW)
+        self.key_listbox.grid(row=1, column=0, sticky=tk.NSEW)
+        self.value_listbox.grid(row=1, column=1, sticky=tk.NSEW)
+        self.scrollbar.grid(row=1, column=2, sticky=tk.NS)
+
+        search_frame.grid_columnconfigure(1, weight=1)
+        tk.Label(search_frame, text="SEARCH:").grid(row=0, column=0, sticky=tk.NSEW)
+        self.search_entry.grid(row=0, column=1, sticky=tk.NSEW)
+        self.search_button.grid(row=0, column=2, sticky=tk.NSEW)
+        search_frame.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW)
+
+        insert_frame.grid_columnconfigure(1, weight=1)
+        tk.Label(insert_frame, text="INSERT:").grid(row=0, column=0, sticky=tk.NSEW)
+        self.insert_entry.grid(row=0, column=1, sticky=tk.NSEW)
+        self.insert_button.grid(row=0, column=2, sticky=tk.NSEW)
+        insert_frame.grid(row=3, column=0, columnspan=3, sticky=tk.NSEW)
 
         self.key_listbox.bind("<MouseWheel>", self._wheel_scroll)
         self.value_listbox.bind("<MouseWheel>", self._wheel_scroll)
         self.key_listbox.bind("<Double-Button-1>", self._key_double_click_callback)
         self.value_listbox.bind("<Double-Button-1>", self._value_double_click_callback)
+        self.key_listbox.bind("<<ListboxSelect>>", self._listbox_select_callback)
+        self.value_listbox.bind("<<ListboxSelect>>", self._listbox_select_callback)
+        self.search_entry.bind("<Return>", self._search_callback)
+        self.insert_entry.bind("<Return>", self._insert_callback)
 
         self._populate(self.root_table)
 
@@ -303,48 +340,77 @@ class NTBrowser(tk.Frame):
         self.value_listbox.yview_scroll(val, tk.UNITS)
 
     def _key_double_click_callback(self, _):
-        selected = self.key_listbox.curselection()
-        if len(selected) != 1:
+        if len(self._curr_indices) != 1:
             return  # TODO: Some sort of warning or error
-        selected = self.key_listbox.get(selected[0])
-        if selected == self.PARENT_DIR:
+        idx = self._curr_indices[0]
+        if self.key_listbox.get(idx) == self.PARENT_DIR:
             self.hierarchy.pop()
-            assert len(self.hierarchy)  # TODO: TEMP
             self._populate(self.hierarchy[-1])
-        elif self.hierarchy[-1].containsSubTable(selected):
-            table = self.hierarchy[-1].getSubTable(selected)
+        elif idx <= self._last_table_idx:
+            table = self._items[idx]
             self.hierarchy.append(table)
             self._populate(table)
         else:  # self.hierarchy[-1].containsKey(selected)
-            pass  # TODO
+            # TODO
+            entry = self._items[idx]
+            print("Whoa! Not implemented! Got entry with with key {} and val {}".format(entry.value, entry.key))
 
     def _value_double_click_callback(self, _):
-        # TODO: This is mostly dupe code...
-        selected = self.value_listbox.curselection()
-        if len(selected) != 1:
+        if len(self._curr_indices) != 1:
             return  # TODO: Some sort of warning or error
-        if self.value_listbox.get(selected[0]) == "-":  # TODO: TEMP, need prettier blank/placeholder
-            return
-        selected = self.key_listbox.get(selected[0])
-        self.EntryPopup(self, self.hierarchy[-1].getEntry(selected))
+        idx = self._curr_indices[0]
+        if idx <= self._last_table_idx:
+            return  # TODO: Some sort of warning or error
+        self.EntryPopup(self, self._items[idx])
 
     def _populate(self, table):
-        # TODO: Add indicator like "[T]" or "[E]" to keys
         self._clear()
+        self._last_table_idx = -1
         if table is not self.root_table:
-            self._append_pair(self.PARENT_DIR, "-")
+            self._append_pair(self.PARENT_DIR, self.BLANK, None)
+            self._last_table_idx += 1
         for subtable in table.getSubTables():
-            self._append_pair(subtable, "-")
+            self._append_pair(self.TABLE_FORMAT.format(subtable), self.BLANK, table.getSubTable(subtable))
+            self._last_table_idx += 1
         for key in table.getKeys():
-            self._append_pair(key, table.getEntry(key).value)
+            entry = table.getEntry(key)
+            self._append_pair(self.ENTRY_FORMAT.format(key), entry.value, entry)
 
-    def _append_pair(self, key, value):
+    def _append_pair(self, key, value, item):
+        self._items.append(item)
         self.key_listbox.insert(tk.END, key)
         self.value_listbox.insert(tk.END, value)
 
     def _clear(self):
+        self._items = []
         self.key_listbox.delete(0, tk.END)
         self.value_listbox.delete(0, tk.END)
+
+    def _search_callback(self):
+        print("SEARCH")
+
+    def _insert_callback(self):
+        print("INSERT")
+
+    def _disable_entry(self):
+        self.insert_entry.delete(0, tk.END)
+        self.insert_entry.configure(state=tk.DISABLED)
+
+    def _enable_entry(self):
+        self.insert_entry.configure(state=tk.NORMAL)
+
+    def _listbox_select_callback(self, _):
+        self._curr_indices = self.key_listbox.curselection() or self.value_listbox.curselection()
+        if self._curr_indices:
+            for idx in self._curr_indices:
+                if idx > self._last_table_idx:
+                    self._enable_entry()
+        else:
+            self._disable_entry()
+
+    def _validate_insert_entry(self, new_str):
+        print(new_str)
+        return True
 
 
 class DockableNTBrowser(DockableMixin, NTBrowser):
