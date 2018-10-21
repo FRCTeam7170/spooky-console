@@ -175,6 +175,17 @@ class DockableGyro(DockableMixin, Gyro):
     pass
 
 
+class Popup(tk.Toplevel):
+    # TODO: Put in tkutils file
+    def __init__(self, master, message, title, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self.title(title)
+        self.minsize(300, 100)
+        self.focus_get()
+
+        tk.Label(self, text=message).pack()
+
+
 from networktables.instance import NetworkTablesInstance
 import random
 
@@ -183,20 +194,26 @@ class TableSim:
 
     class EntrySim:
 
-        def __init__(self, value, path):
+        def __init__(self, key, value):
+            self.key = key
             self.value = value
-            self.key = path
+            self.type = random.choice([NetworkTablesInstance.EntryTypes.BOOLEAN,
+                                       NetworkTablesInstance.EntryTypes.DOUBLE,
+                                       NetworkTablesInstance.EntryTypes.STRING,
+                                       NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY,
+                                       NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY,
+                                       NetworkTablesInstance.EntryTypes.STRING_ARRAY])
 
         def getName(self):
             return self.key
 
         def getType(self):
-            return random.choice([NetworkTablesInstance.EntryTypes.BOOLEAN,
-                                  NetworkTablesInstance.EntryTypes.DOUBLE,
-                                  NetworkTablesInstance.EntryTypes.STRING,
-                                  NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY,
-                                  NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY,
-                                  NetworkTablesInstance.EntryTypes.STRING_ARRAY])
+            return self.type
+
+        def setBoolean(self, val):
+            self.value = val
+
+        setDouble = setString = setBooleanArray = setDoubleArray = setStringArray = setBoolean
 
     PATH_SEPARATOR = '/'
 
@@ -204,10 +221,14 @@ class TableSim:
         self.data = data
         self.path = path
 
+        for k, v in self.data.items():
+            if not self.is_sub_table(v) and not self.is_entry(v):
+                self.data[k] = self.EntrySim(k, v)
+
     def getEntry(self, key):
         ret = self.data[key]
         assert self.is_entry(ret)
-        return self.EntrySim(ret, key)
+        return ret
 
     def getSubTable(self, key):
         ret = self.data[key]
@@ -215,14 +236,14 @@ class TableSim:
         return TableSim(ret, self.path + key + self.PATH_SEPARATOR)
 
     def getKeys(self):
-        return [key for key, value in self.data.items() if not isinstance(value, dict)]
+        return [key for key, value in self.data.items() if isinstance(value, TableSim.EntrySim)]
 
     def getSubTables(self):
         return [key for key, value in self.data.items() if isinstance(value, dict)]
 
     def containsKey(self, key):
         try:
-            return not isinstance(self.data[key], dict)
+            return isinstance(self.data[key], TableSim.EntrySim)
         except KeyError:
             return False
 
@@ -238,10 +259,13 @@ class TableSim:
 
     @staticmethod
     def is_entry(data):
-        return not isinstance(data, dict)
+        return isinstance(data, TableSim.EntrySim)
 
 
 class NTBrowser(tk.Frame):
+
+    # TODO: Make data auto-update? (both in listbox and popup window)
+    # TODO: Provide access to anonymous labels?
 
     PARENT_DIR = ".."
     TABLE_FORMAT = "[T] {}"
@@ -261,13 +285,11 @@ class NTBrowser(tk.Frame):
             self.focus_get()
 
             self.grid_columnconfigure(1, weight=1)
-            self.grid_rowconfigure(0, weight=1)
             self.grid_rowconfigure(1, weight=1)
 
             tk.Label(self, text="TYPE:").grid(row=0, column=0)
             tk.Label(self, text=ntutils.type_constant_to_str(entry.getType())).grid(row=0, column=1)
 
-            # TODO: Make data auto-update?
             tk.Label(self, text="DATA:").grid(row=1, column=0)
             data = tk.Text(self, height=self.DATA_HEIGHT, width=self.DATA_WIDTH)
             data.insert(tk.END, str(entry.value))
@@ -275,7 +297,6 @@ class NTBrowser(tk.Frame):
             data.grid(row=1, column=1, sticky=tk.NSEW)
 
     def __init__(self, master, root_table, *args, **kwargs):
-        # TODO: Provide access to anonymous labels?
         super().__init__(master, *args, **kwargs)
         self.root_table = root_table
         self.hierarchy = deque((root_table,))
@@ -287,14 +308,10 @@ class NTBrowser(tk.Frame):
         self.key_listbox = tk.Listbox(self, selectmode=tk.EXTENDED, yscrollcommand=self.scrollbar.set)
         self.value_listbox = tk.Listbox(self, selectmode=tk.EXTENDED, yscrollcommand=self.scrollbar.set)
 
-        search_frame = tk.Frame(self)
-        self.search_entry = tk.Entry(search_frame)
-        self.search_button = tk.Button(search_frame, command=self._search_callback, text="Enter")
-
-        insert_frame = tk.Frame(self)
-        validate_callback = self.register(self._validate_insert_entry)
-        self.insert_entry = tk.Entry(insert_frame, validate=tk.ALL, vcmd=(validate_callback, "%P"), state=tk.DISABLED)
-        self.insert_button = tk.Button(insert_frame, command=self._insert_callback, text="Enter")
+        lower_frame = tk.Frame(self)
+        self.insert_entry = tk.Entry(lower_frame, state=tk.DISABLED)
+        self.insert_button = tk.Button(lower_frame, command=self._insert_callback, text="Enter")
+        self.reload_button = tk.Button(lower_frame, command=self._reload_entries(), text="Reload")
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -306,17 +323,12 @@ class NTBrowser(tk.Frame):
         self.value_listbox.grid(row=1, column=1, sticky=tk.NSEW)
         self.scrollbar.grid(row=1, column=2, sticky=tk.NS)
 
-        search_frame.grid_columnconfigure(1, weight=1)
-        tk.Label(search_frame, text="SEARCH:").grid(row=0, column=0, sticky=tk.NSEW)
-        self.search_entry.grid(row=0, column=1, sticky=tk.NSEW)
-        self.search_button.grid(row=0, column=2, sticky=tk.NSEW)
-        search_frame.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW)
-
-        insert_frame.grid_columnconfigure(1, weight=1)
-        tk.Label(insert_frame, text="INSERT:").grid(row=0, column=0, sticky=tk.NSEW)
+        lower_frame.grid_columnconfigure(1, weight=1)
+        tk.Label(lower_frame, text="INSERT:").grid(row=0, column=0, sticky=tk.NSEW)
         self.insert_entry.grid(row=0, column=1, sticky=tk.NSEW)
         self.insert_button.grid(row=0, column=2, sticky=tk.NSEW)
-        insert_frame.grid(row=3, column=0, columnspan=3, sticky=tk.NSEW)
+        self.reload_button.grid(row=0, column=3, sticky=tk.NSEW)
+        lower_frame.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW)
 
         self.key_listbox.bind("<MouseWheel>", self._wheel_scroll)
         self.value_listbox.bind("<MouseWheel>", self._wheel_scroll)
@@ -324,10 +336,12 @@ class NTBrowser(tk.Frame):
         self.value_listbox.bind("<Double-Button-1>", self._value_double_click_callback)
         self.key_listbox.bind("<<ListboxSelect>>", self._listbox_select_callback)
         self.value_listbox.bind("<<ListboxSelect>>", self._listbox_select_callback)
-        self.search_entry.bind("<Return>", self._search_callback)
         self.insert_entry.bind("<Return>", self._insert_callback)
 
         self._populate(self.root_table)
+
+    def _reload_entries(self):
+        self._populate(self.hierarchy[-1])
 
     def _merged_yview(self, *args):
         self.key_listbox.yview(*args)
@@ -350,10 +364,8 @@ class NTBrowser(tk.Frame):
             table = self._items[idx]
             self.hierarchy.append(table)
             self._populate(table)
-        else:  # self.hierarchy[-1].containsKey(selected)
-            # TODO
-            entry = self._items[idx]
-            print("Whoa! Not implemented! Got entry with with key {} and val {}".format(entry.value, entry.key))
+        else:
+            self.EntryPopup(self, self._items[idx])
 
     def _value_double_click_callback(self, _):
         if len(self._curr_indices) != 1:
@@ -364,6 +376,7 @@ class NTBrowser(tk.Frame):
         self.EntryPopup(self, self._items[idx])
 
     def _populate(self, table):
+        self._disable_entry()
         self._clear()
         self._last_table_idx = -1
         if table is not self.root_table:
@@ -374,7 +387,7 @@ class NTBrowser(tk.Frame):
             self._last_table_idx += 1
         for key in table.getKeys():
             entry = table.getEntry(key)
-            self._append_pair(self.ENTRY_FORMAT.format(key), entry.value, entry)
+            self._append_pair(self.ENTRY_FORMAT.format(key), str(entry.value), entry)
 
     def _append_pair(self, key, value, item):
         self._items.append(item)
@@ -386,31 +399,40 @@ class NTBrowser(tk.Frame):
         self.key_listbox.delete(0, tk.END)
         self.value_listbox.delete(0, tk.END)
 
-    def _search_callback(self):
-        print("SEARCH")
-
-    def _insert_callback(self):
-        print("INSERT")
+    def _insert_callback(self, _=None):
+        try:
+            value = ntutils.type_cast(self.insert_entry.get(), self._items[self._curr_indices[0]].getType())
+            for idx in self._curr_indices:
+                ntutils.set_entry_by_type(self._items[idx], value)
+            self._reload_entries()
+        except ValueError as e:
+            # TODO: This could use some prettification
+            Popup(self, "Error: {}".format(str(e)), "Error")
 
     def _disable_entry(self):
         self.insert_entry.delete(0, tk.END)
         self.insert_entry.configure(state=tk.DISABLED)
+        self.insert_button.configure(state=tk.DISABLED)
 
     def _enable_entry(self):
         self.insert_entry.configure(state=tk.NORMAL)
+        self.insert_button.configure(state=tk.NORMAL)
 
     def _listbox_select_callback(self, _):
         self._curr_indices = self.key_listbox.curselection() or self.value_listbox.curselection()
         if self._curr_indices:
+            kind = None
             for idx in self._curr_indices:
-                if idx > self._last_table_idx:
-                    self._enable_entry()
-        else:
-            self._disable_entry()
-
-    def _validate_insert_entry(self, new_str):
-        print(new_str)
-        return True
+                if idx <= self._last_table_idx:
+                    break
+                if kind is None:
+                    kind = self._items[idx].getType()
+                elif self._items[idx].getType() != kind:
+                    break
+            else:
+                self._enable_entry()
+                return
+        self._disable_entry()
 
 
 class DockableNTBrowser(DockableMixin, NTBrowser):

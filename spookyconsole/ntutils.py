@@ -22,10 +22,10 @@ def assure_ntpath_exists(ctx):
 
 
 def str_to_bool(string):
-    string = string.lower()
-    if string in TRUE:
+    lstring = string.lower().strip()
+    if lstring in TRUE:
         return True
-    elif string in FALSE:
+    elif lstring in FALSE:
         return False
     else:
         raise ValueError(BOOLEAN_CONV_FAIL_MSG.format(string))
@@ -44,6 +44,44 @@ def type_constant_to_str(kind):
         return "DOUBLE_ARRAY"
     else:  # kind == NetworkTablesInstance.EntryTypes.STRING_ARRAY:
         return "STRING_ARRAY"
+
+
+def type_cast(value, kind, ctx=None):
+    try:
+        if kind == NetworkTablesInstance.EntryTypes.BOOLEAN:
+            return str_to_bool(value)
+        elif kind == NetworkTablesInstance.EntryTypes.DOUBLE:
+            try:
+                return float(value)
+            except ValueError:
+                raise ValueError(DOUBLE_CONV_FAIL_MSG.format(value))
+        elif kind == NetworkTablesInstance.EntryTypes.STRING:
+            return value
+        elif kind == NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY:
+            # TODO: manual invocation of convert seems a little hacky...
+            return BOOLEAN_ARRAY.convert(value, None, ctx)
+        elif kind == NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY:
+            return DOUBLE_ARRAY.convert(value, None, ctx)
+        else:  # kind == NetworkTablesInstance.EntryTypes.STRING_ARRAY
+            return STRING_ARRAY.convert(value, None, ctx)
+    except click.BadParameter as e:
+        raise ValueError(e)
+
+
+def set_entry_by_type(entry, value):
+    kind = entry.getType()
+    if kind == NetworkTablesInstance.EntryTypes.BOOLEAN:
+        return entry.setBoolean(value)
+    elif kind == NetworkTablesInstance.EntryTypes.DOUBLE:
+        return entry.setDouble(value)
+    elif kind == NetworkTablesInstance.EntryTypes.STRING:
+        return entry.setString(value)
+    elif kind == NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY:
+        return entry.setBooleanArray(value)
+    elif kind == NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY:
+        return entry.setDoubleArray(value)
+    else:  # kind == NetworkTablesInstance.EntryTypes.STRING_ARRAY
+        return entry.setStringArray(value)
 
 
 class NTPath:

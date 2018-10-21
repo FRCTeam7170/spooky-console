@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import font as tkfont
 from contextlib import contextmanager
+from collections import deque
 
 
 GRAY_SCALE_0 = "#000000"
@@ -59,23 +60,28 @@ _tkText = tk.Text
 _tkToplevel = tk.Toplevel
 
 
+_style = deque()
+_patched = False
+
+
 class StyledMixin:
 
     STYLED_OPTS = []
 
     def __init__(self, *args, **kwargs):
-        print(type(self))
-        for opt in self.STYLED_OPTS:
-            if opt in GLOBAL_STYLE:
-                if opt == "troughcolor":
-                    print("TC")
-                self._apply(kwargs, opt, GLOBAL_STYLE[opt])
+        if _style:
+            kwargs = self._apply_style_to_dict(kwargs)
         super().__init__(*args, **kwargs)
 
-    @staticmethod
-    def _apply(kwargs, key, value):
-        if key not in kwargs:
-            kwargs[key] = value
+    def restyle(self, **overrides):
+        self.configure(**self._apply_style_to_dict(overrides))
+
+    def _apply_style_to_dict(self, conf):
+        style = _style[-1]
+        for opt in self.STYLED_OPTS:
+            if opt in style and opt not in conf:
+                conf[opt] = style[opt]
+        return conf
 
 
 class StyledButton(StyledMixin, tk.Button):
@@ -162,68 +168,74 @@ class StyledToplevel(StyledMixin, tk.Toplevel):
     STYLED_OPTS = ["bg", "bd", "highlightcolor", "highlightbackground", "highlightthickness", "relief"]
 
 
-GLOBAL_STYLE = {}
-
-
 @contextmanager
 def stylize(root,
-            font_family=FONT_FAMILY_MONOSPACED,
-            font_size=11,
-            font_italic=False,
-            font_bold=False,
-            font_underline=False,
-            font_overstrike=False,
-            bg=GRAY_SCALE_4,
-            active_bg=GRAY_SCALE_2,
-            fg=GRAY_SCALE_E,
-            active_fg=GRAY_SCALE_5,
-            disabled_fg=GRAY_SCALE_5,
-            bd_width=1,
-            highlight_active_colour=GRAY_SCALE_0,
-            highlight_unactive_colour=GRAY_SCALE_0,
-            highlight_thickness=0,
+            font_family=None,
+            font_size=None,
+            font_italic=None,
+            font_bold=None,
+            font_underline=None,
+            font_overstrike=None,
+            bg=None,
+            active_bg=None,
+            fg=None,
+            active_fg=None,
+            disabled_fg=None,
+            bd_width=None,
+            highlight_active_colour=None,
+            highlight_inactive_colour=None,
+            highlight_thickness=None,
             relief=None,
-            justify=tk.LEFT,
+            justify=None,
             **kwargs):
-    def add_if_non_none(d, key, val):
+    def add_style(d, key, val):
         if val is not None:
             d[key] = val
+        elif key in d:
+            del d[key]
 
-    global GLOBAL_STYLE
-    GLOBAL_STYLE = {}
+    global _style
+    new_style = _style[-1].copy() if _style else {}
 
-    font_spec = {}
-    add_if_non_none(font_spec, "family", font_family)
-    add_if_non_none(font_spec, "size", font_size)
-    add_if_non_none(font_spec, "underline", font_underline)
-    add_if_non_none(font_spec, "overstrike", font_overstrike)
-    if font_italic is not None:
-        font_spec["slant"] = tkfont.ITALIC if font_italic else tkfont.ROMAN
-    if font_bold is not None:
-        font_spec["weight"] = tkfont.BOLD if font_bold else tkfont.NORMAL
-    GLOBAL_STYLE["font"] = tkfont.Font(root, **font_spec)
+    font_spec = new_style["font"].actual() if "font" in new_style else {}
+    add_style(font_spec, "family", font_family)
+    add_style(font_spec, "size", font_size)
+    add_style(font_spec, "underline", font_underline)
+    add_style(font_spec, "overstrike", font_overstrike)
+    add_style(font_spec, "slant", None if font_italic is None else (tkfont.ROMAN, tkfont.ITALIC)[font_italic])
+    add_style(font_spec, "weight", None if font_bold is None else (tkfont.NORMAL, tkfont.BOLD)[font_bold])
+    new_style["font"] = tkfont.Font(root, **font_spec)
 
-    add_if_non_none(GLOBAL_STYLE, "bg", bg)
-    add_if_non_none(GLOBAL_STYLE, "activebackground", active_bg)
-    add_if_non_none(GLOBAL_STYLE, "fg", fg)
-    add_if_non_none(GLOBAL_STYLE, "activeforeground", active_fg)
-    add_if_non_none(GLOBAL_STYLE, "disabledforeground", disabled_fg)
-    add_if_non_none(GLOBAL_STYLE, "bd", bd_width)
-    add_if_non_none(GLOBAL_STYLE, "highlightcolor", highlight_active_colour)
-    add_if_non_none(GLOBAL_STYLE, "highlightbackground", highlight_unactive_colour)
-    add_if_non_none(GLOBAL_STYLE, "highlightthickness", highlight_thickness)
-    add_if_non_none(GLOBAL_STYLE, "relief", relief)
-    add_if_non_none(GLOBAL_STYLE, "justify", justify)
-    GLOBAL_STYLE.update(kwargs)
+    add_style(new_style, "bg", bg)
+    add_style(new_style, "activebackground", active_bg)
+    add_style(new_style, "fg", fg)
+    add_style(new_style, "activeforeground", active_fg)
+    add_style(new_style, "disabledforeground", disabled_fg)
+    add_style(new_style, "bd", bd_width)
+    add_style(new_style, "highlightcolor", highlight_active_colour)
+    add_style(new_style, "highlightbackground", highlight_inactive_colour)
+    add_style(new_style, "highlightthickness", highlight_thickness)
+    add_style(new_style, "relief", relief)
+    add_style(new_style, "justify", justify)
+    for k, v in kwargs.items():
+        add_style(new_style, k, v)
 
+    patch_changed = False
     try:
-        patch_tk_widgets()
-        yield
+        if not _patched:
+            patch_changed = True
+            patch_tk_widgets()
+        _style.append(new_style)
+        yield new_style
     finally:
-        unpatch_tk_widgets()
+        if patch_changed:
+            unpatch_tk_widgets()
+        _style.pop()
 
 
 def patch_tk_widgets():
+    global _patched
+    _patched = True
     tk.Button = StyledButton
     tk.Canvas = StyledCanvas
     tk.Checkbutton = StyledCheckbutton
@@ -243,6 +255,8 @@ def patch_tk_widgets():
 
 
 def unpatch_tk_widgets():
+    global _patched
+    _patched = False
     tk.Button = _tkButton
     tk.Canvas = _tkCanvas
     tk.Checkbutton = _tkCheckbutton
