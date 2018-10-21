@@ -448,18 +448,14 @@ class Grid(ScrollCanvas):
         """
         self._draw_grid()
         self._curr_dockable = dockable
-        id_, self._curr_dockable_orig_cell = self._dockables[dockable]
-        # The x and y coordinates must be captured before the dockable is removed!
-        x, y = self.coords(id_)
+        self._curr_dockable_orig_cell = self._dockables[dockable].cell
         self.remove_dockable(dockable)
         # Despite the user not actually moving the mouse, call signal_drag_motion so that the highlight appears on the
         # grid.
-        self.signal_drag_motion(x, y)
+        self.signal_drag_motion()
 
     def signal_drag_stop(self):
-        """
-        Called by a ``DockableMixin`` widget to signal that it has stopped being dragged.
-        """
+        """Called by a ``DockableMixin`` widget to signal that it has stopped being dragged."""
         self._clear_grid()
         self._clear_highlight()
         if self._curr_cell:
@@ -472,21 +468,16 @@ class Grid(ScrollCanvas):
         self._curr_dockable = None
         self._curr_dockable_orig_cell = None
 
-    def signal_drag_motion(self, mouse_x, mouse_y):
-        """
-        Called by a ``DockableMixin`` widget currently being dragged to signal that the mouse has moved.
-
-        :param mouse_x: The mouse's x coordinate relative to the root widget.
-        :type mouse_x: int
-        :param mouse_y: The mouse's y coordinate relative to the root widget.
-        :type mouse_y: int
-        """
+    def signal_drag_motion(self):
+        """Called by a ``DockableMixin`` widget currently being dragged to signal that the mouse has moved."""
         self._clear_highlight()
         self._curr_cell = None
 
         # Find the cell over which the cursor has moved to.
         # Note the calls to canvasx and canvasy; these are necessary since the canvas is scrollable and the mouse_x and
         # mouse_y coordinates are relative to the root window, not the canvas.
+        mouse_x = self.winfo_pointerx() - self.winfo_rootx()
+        mouse_y = self.winfo_pointery() - self.winfo_rooty()
         col, row = self._find_nearest_cell(self.canvasx(mouse_x), self.canvasy(mouse_y))
         # Alias the col and row span for conciseness.
         col_span = self._curr_dockable.col_span
@@ -857,14 +848,14 @@ class DockableMixin:
 
         self.bind_drag_on(self)
 
-    def on_drag_start(self, _):
+    def _on_drag_start(self, _):
         self.parent_grid.signal_drag_start(self)
 
-    def on_drag_stop(self, _):
+    def _on_drag_stop(self, _):
         self.parent_grid.signal_drag_stop()
 
-    def on_drag_motion(self, event):
-        self.parent_grid.signal_drag_motion(self.winfo_x() + event.x, self.winfo_y() + event.y)
+    def _on_drag_motion(self, _):
+        self.parent_grid.signal_drag_motion()
 
     def move_dockable(self, col, row):
         return self.parent_grid.move_dockable(self, Cell(col, row))
@@ -875,14 +866,9 @@ class DockableMixin:
         self.parent_grid.dockable_resized(self)
 
     def bind_drag_on(self, widget):
-        def patch_event_and_call(event):
-            event.x += widget.winfo_x()
-            event.y += widget.winfo_y()
-            self.on_drag_motion(event)
-
-        widget.bind("<Button-3>", self.on_drag_start)
-        widget.bind("<ButtonRelease-3>", self.on_drag_stop)
-        widget.bind("<B3-Motion>", self.on_drag_motion if widget is self else patch_event_and_call)
+        widget.bind("<Button-3>", self._on_drag_start)
+        widget.bind("<ButtonRelease-3>", self._on_drag_stop)
+        widget.bind("<B3-Motion>", self._on_drag_motion)
 
     @staticmethod
     def unbind_drag_on(widget):

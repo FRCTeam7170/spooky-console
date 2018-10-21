@@ -264,9 +264,6 @@ class TableSim:
 
 class NTBrowser(tk.Frame):
 
-    # TODO: Make data auto-update? (both in listbox and popup window)
-    # TODO: Provide access to anonymous labels?
-
     PARENT_DIR = ".."
     TABLE_FORMAT = "[T] {}"
     ENTRY_FORMAT = "[E] {}"
@@ -305,30 +302,33 @@ class NTBrowser(tk.Frame):
         self._curr_indices = None
 
         self.scrollbar = tk.Scrollbar(self, command=self._merged_yview)
+        self.key_label = tk.Label(self, text="KEY")
         self.key_listbox = tk.Listbox(self, selectmode=tk.EXTENDED, yscrollcommand=self.scrollbar.set)
+        self.value_label = tk.Label(self, text="VALUE")
         self.value_listbox = tk.Listbox(self, selectmode=tk.EXTENDED, yscrollcommand=self.scrollbar.set)
 
-        lower_frame = tk.Frame(self)
-        self.insert_entry = tk.Entry(lower_frame, state=tk.DISABLED)
-        self.insert_button = tk.Button(lower_frame, command=self._insert_callback, text="Enter")
-        self.reload_button = tk.Button(lower_frame, command=self._reload_entries(), text="Reload")
+        self.lower_frame = tk.Frame(self)
+        self.insert_label = tk.Label(self.lower_frame, text="INSERT:")
+        self.insert_entry = tk.Entry(self.lower_frame, state=tk.DISABLED)
+        self.insert_button = tk.Button(self.lower_frame, command=self._insert_callback, text="Enter")
+        self.reload_button = tk.Button(self.lower_frame, command=self._reload_entries(), text="Reload")
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(1, weight=1)
+        self.lower_frame.grid_columnconfigure(1, weight=1)
 
-        tk.Label(self, text="KEY").grid(row=0, column=0, sticky=tk.NSEW)
-        tk.Label(self, text="VALUE").grid(row=0, column=1, sticky=tk.NSEW)
+        self.key_label.grid(row=0, column=0, sticky=tk.NSEW)
+        self.value_label.grid(row=0, column=1, sticky=tk.NSEW)
         self.key_listbox.grid(row=1, column=0, sticky=tk.NSEW)
         self.value_listbox.grid(row=1, column=1, sticky=tk.NSEW)
         self.scrollbar.grid(row=1, column=2, sticky=tk.NS)
 
-        lower_frame.grid_columnconfigure(1, weight=1)
-        tk.Label(lower_frame, text="INSERT:").grid(row=0, column=0, sticky=tk.NSEW)
+        self.insert_label.grid(row=0, column=0, sticky=tk.NSEW)
         self.insert_entry.grid(row=0, column=1, sticky=tk.NSEW)
         self.insert_button.grid(row=0, column=2, sticky=tk.NSEW)
         self.reload_button.grid(row=0, column=3, sticky=tk.NSEW)
-        lower_frame.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW)
+        self.lower_frame.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW)
 
         self.key_listbox.bind("<MouseWheel>", self._wheel_scroll)
         self.value_listbox.bind("<MouseWheel>", self._wheel_scroll)
@@ -436,10 +436,16 @@ class NTBrowser(tk.Frame):
 
 
 class DockableNTBrowser(DockableMixin, NTBrowser):
-    pass
+
+    def __init__(self, master, table, width=5, height=5, *args, **kwargs):
+        super().__init__(master, width, height, table, *args, **kwargs)
+        self.bind_drag_on(self.key_listbox)
+        self.bind_drag_on(self.value_listbox)
+        self.bind_drag_on(self.key_label)
+        self.bind_drag_on(self.value_label)
+        self.bind_drag_on(self.insert_label)
 
 
-# TODO: UNIVERSAL STYLING
 # TODO: Robot SVG?
 # TODO: Motor monitor
 # TODO: Generic network tables entry tracker
