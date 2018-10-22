@@ -19,8 +19,10 @@ gui = core.GuiManager("Plot Tests")
 win = gui.new_win()
 win.protocol("WM_DELETE_WINDOW", gui.root.destroy)
 win.init_grid(10, 10).set_resize_protocol(core.Grid.RESIZE_PROTO_ADD_PADDING)
-table = widgets.TableSim({"E1": "E"*200, "E2": 2, "E3": 3, "T1": {"T1E1": 1, "T1E2": 2}})
-win.grid.register_dockable(widgets.DockableNTBrowser(win.grid, table, 4, 2))
+d = {"E{}".format(n): n for n in range(2, 100)}
+d.update({"E1": "E"*200, "T1": {"T1E1": 1, "T1E2": 2}})
+table = widgets.TableSim(d)
+win.grid.register_dockable(widgets.DockableNTBrowser(win.grid, table, 10, 10))
 
 """
 p1 = plot.DockablePlot(win.grid, style="ggplot")

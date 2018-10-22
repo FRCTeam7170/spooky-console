@@ -300,6 +300,9 @@ class NTBrowser(tk.Frame):
         self._last_table_idx = None
         self._items = []
         self._curr_indices = None
+        self._curr_scroll_row = 0
+        self._curr_entry_popup = None
+        self._curr_error_popup = None
 
         self.scrollbar = tk.Scrollbar(self, command=self._merged_yview)
         self.key_label = tk.Label(self, text="KEY")
@@ -344,14 +347,17 @@ class NTBrowser(tk.Frame):
         self._populate(self.hierarchy[-1])
 
     def _merged_yview(self, *args):
+        self._curr_scroll_row = round(float(args[1]) * len(self._items))
         self.key_listbox.yview(*args)
         self.value_listbox.yview(*args)
 
     def _wheel_scroll(self, event):
-        # TODO: Scrolling can get out of sync for some reason...
-        val = -1 * int(event.delta * self.SCROLL_SCALE)
-        self.key_listbox.yview_scroll(val, tk.UNITS)
-        self.value_listbox.yview_scroll(val, tk.UNITS)
+        lower_scroll, upper_scroll = self.scrollbar.get()
+        if (lower_scroll != 0 and event.delta > 0) or (upper_scroll != 1 and event.delta < 0):
+            self._curr_scroll_row += int(math.copysign(1, -event.delta))
+            diff = int(math.copysign(4, -event.delta))
+            self.key_listbox.yview(self._curr_scroll_row + (diff if self.key_listbox is not event.widget else 0))
+            self.value_listbox.yview(self._curr_scroll_row + (diff if self.value_listbox is not event.widget else 0))
 
     def _key_double_click_callback(self, _):
         if len(self._curr_indices) != 1:
@@ -365,7 +371,7 @@ class NTBrowser(tk.Frame):
             self.hierarchy.append(table)
             self._populate(table)
         else:
-            self.EntryPopup(self, self._items[idx])
+            self._create_entry_popup(idx)
 
     def _value_double_click_callback(self, _):
         if len(self._curr_indices) != 1:
@@ -373,9 +379,15 @@ class NTBrowser(tk.Frame):
         idx = self._curr_indices[0]
         if idx <= self._last_table_idx:
             return  # TODO: Some sort of warning or error
-        self.EntryPopup(self, self._items[idx])
+        self._create_entry_popup(idx)
+
+    def _create_entry_popup(self, idx):
+        if self._curr_entry_popup:
+            self._curr_entry_popup.destroy()
+        self._curr_entry_popup = self.EntryPopup(self, self._items[idx])
 
     def _populate(self, table):
+        self._curr_scroll_row = 0
         self._disable_entry()
         self._clear()
         self._last_table_idx = -1
@@ -407,7 +419,9 @@ class NTBrowser(tk.Frame):
             self._reload_entries()
         except ValueError as e:
             # TODO: This could use some prettification
-            Popup(self, "Error: {}".format(str(e)), "Error")
+            if self._curr_error_popup:
+                self._curr_error_popup.destroy()
+            self._curr_error_popup = Popup(self, "Error: {}".format(str(e)), "Error")
 
     def _disable_entry(self):
         self.insert_entry.delete(0, tk.END)
