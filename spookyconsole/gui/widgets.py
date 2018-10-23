@@ -86,7 +86,7 @@ class BooleanIndicatorBase:
 
 class BooleanIndicator(BooleanIndicatorBase, tk.Frame):
 
-    def __init__(self, master, text="", mutable=False, on_colour="green", off_colour="red", *args, **kwargs):
+    def __init__(self, master, text="", mutable=True, on_colour="green", off_colour="red", *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.on_colour = on_colour
         self.off_colour = off_colour
@@ -170,7 +170,55 @@ class DockableLabelledText(DockableMixin, LabelledText):
 
 class BooleanIndicatorBank(tk.Frame):
 
-    class Item(BooleanIndicatorBase, tk.Checkbutton):
+    def __init__(self, master, ipadx=2, ipady=2, padx=1, pady=1, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self.bis = []
+        self.ipadx = ipadx
+        self.ipady = ipady
+        self.padx = padx
+        self.pady = pady
+
+    def add(self, row, column, text="", mutable=True, on_colour="green", off_colour="red", *args, **kwargs):
+        bi = BooleanIndicator(self, text, mutable, on_colour, off_colour, *args, **kwargs)
+        self.bis.append(bi)
+        self._assure_resizeable(row, column)
+        bi.grid(row=row, column=column, sticky=tk.NSEW,
+                ipadx=self.ipadx, ipady=self.ipady, padx=self.padx, pady=self.pady)
+        return bi
+
+    def remove(self, bi):
+        bi.destroy()
+        self.bis.remove(bi)
+
+    def _assure_resizeable(self, row, col):
+        self.grid_rowconfigure(row, weight=1)
+        self.grid_columnconfigure(col, weight=1)
+
+
+class DockableBooleanIndicatorBank(DockableMixin, BooleanIndicatorBank):
+
+    def __init__(self, master, width=2, height=2, *args, **kwargs):
+        super().__init__(master, width, height, *args, **kwargs)
+
+    def add(self, *args, **kwargs):
+        bi = super().add(*args, **kwargs)
+        self.bind_drag_on(bi)
+        if bi.label:
+            self.bind_drag_on(bi.label)
+        return bi
+
+
+class BooleanIndicatorLabelledBank(BooleanIndicatorBank):
+
+    def __init__(self, master, text, ipadx=2, ipady=2, padx=1, pady=1, *args, **kwargs):
+        self.labelled_frame = tk.LabelFrame(master, text=text, *args, **kwargs)
+        super().__init__(self.labelled_frame, ipadx, ipady, padx, pady)
+        self.pack(fill=tk.BOTH, expand=True)
+
+
+class LabelledTextBank(tk.Frame):
+
+    class Item(LabelledTextBase, tk.Checkbutton):
 
         def __init__(self, master, *args, **kwargs):
             super().__init__(master, *args, **kwargs)
@@ -446,5 +494,5 @@ class DockableNTBrowser(DockableMixin, NTBrowser):
 
 # TODO: Robot SVG?
 # TODO: Motor monitor
-# TODO: Generic network tables entry tracker
 # TODO: Log output
+# TODO: having args&kwargs for all tk widget subclasses is weird in some cases involving multiple inheritance... remove?

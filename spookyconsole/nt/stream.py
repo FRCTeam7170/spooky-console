@@ -7,6 +7,8 @@ from spookyconsole.nt import ntutils
 
 class NTStream:
 
+    # TODO: send data in specific chunk sizes?
+
     def __init__(self, kind, receiving_entry=None, transmitting_entry=None, cache_size=100):
         if not (receiving_entry or transmitting_entry):
             raise ValueError("at least one entry must be given")
@@ -56,6 +58,14 @@ class NTStream:
         if not self._output_blocked():
             self.t_set_func(list(self.cache))
             self.cache.clear()
+
+    def new_data_listener(self, func, flags=NetworkTablesInstance.NotifyFlags.UPDATE):
+        if not self.readable():
+            raise ValueError("cannot add a listener to a write-only stream")
+        return self.receiving_entry.addListener(func, flags)
+
+    def remove_listener(self, id_):
+        self.receiving_entry.removeListener(id_)
 
     @staticmethod
     def _check_entry_type(entry, kind):
