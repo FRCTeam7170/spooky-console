@@ -2,6 +2,7 @@
 from spookyconsole.gui import core
 from spookyconsole.gui import plot
 from spookyconsole.gui import widgets
+from spookyconsole.test import TableSim
 from spookyconsole import utils
 import math
 
@@ -21,7 +22,7 @@ win.protocol("WM_DELETE_WINDOW", gui.root.destroy)
 win.init_grid(10, 10).set_resize_protocol(core.Grid.RESIZE_PROTO_ADD_PADDING)
 d = {"E{}".format(n): n for n in range(2, 100)}
 d.update({"E1": "E"*200, "T1": {"T1E1": 1, "T1E2": 2}})
-table = widgets.TableSim(d)
+table = TableSim(d)
 win.grid.register_dockable(widgets.DockableNTBrowser(win.grid, table, 10, 10))
 
 """

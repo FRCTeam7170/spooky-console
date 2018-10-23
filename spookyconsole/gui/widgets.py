@@ -7,7 +7,18 @@ import tkinter as tk
 import math
 from collections import deque
 from .core import DockableMixin
-from .. import ntutils
+from spookyconsole.nt import ntutils
+
+
+class Popup(tk.Toplevel):
+    # TODO: Put in tkutils file
+    def __init__(self, master, message, title, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self.title(title)
+        self.minsize(300, 100)
+        self.focus_get()
+
+        tk.Label(self, text=message).pack()
 
 
 class DockableLabel(DockableMixin, tk.Label):
@@ -58,11 +69,25 @@ class DockableText(DockableMixin, tk.Text):
     pass
 
 
-class BooleanIndicator(tk.Frame):
+class BooleanIndicatorBase:
+
+    def __init__(self, master, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self.var = tk.BooleanVar(master)
+
+    @property
+    def value(self):
+        return self.var.get()
+
+    @value.setter
+    def value(self, val):
+        self.var.set(val)
+
+
+class BooleanIndicator(BooleanIndicatorBase, tk.Frame):
 
     def __init__(self, master, text="", mutable=False, on_colour="green", off_colour="red", *args, **kwargs):
         super().__init__(master, *args, **kwargs)
-        self.var = tk.BooleanVar(self)
         self.on_colour = on_colour
         self.off_colour = off_colour
 
@@ -80,14 +105,6 @@ class BooleanIndicator(tk.Frame):
 
         self.var.trace_add("write", self._on_change)
         self.value = True
-
-    @property
-    def value(self):
-        return self.var.get()
-
-    @value.setter
-    def value(self, val):
-        self.var.set(val)
 
     def _on_change(self, *_):
         colour = self.on_colour if self.value else self.off_colour
@@ -107,13 +124,68 @@ class DockableBooleanIndicator(DockableMixin, BooleanIndicator):
             self.bind_drag_on(self.label)
 
 
+class LabelledTextBase:
+
+    def __init__(self, master, title, *args, text="", **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self.text_var = tk.StringVar(self, text)
+        self.title_var = tk.StringVar(self, title)
+
+    @property
+    def text(self):
+        return self.text_var.get()
+
+    @text.setter
+    def text(self, val):
+        self.text_var.set(val)
+
+    @property
+    def title(self):
+        return self.title_var.get()
+
+    @title.setter
+    def title(self, val):
+        self.title_var.set(val)
+
+
+class LabelledText(LabelledTextBase, tk.Frame):
+
+    def __init__(self, master, title, text="", *args, **kwargs):
+        super().__init__(master, title, text=text, *args, **kwargs)
+
+        self.text_label = tk.Label(self, textvar=self.text_var)
+        self.title_label = tk.Label(self, textvar=self.title_var)
+
+        self.text_label.pack(fill=tk.BOTH, expand=True)
+        self.title_label.pack(fill=tk.BOTH, expand=True)
+
+
+class DockableLabelledText(DockableMixin, LabelledText):
+
+    def __init__(self, master, title, text="", width=1, height=1, *args, **kwargs):
+        super().__init__(master, width, height, title, text, *args, **kwargs)
+        self.bind_drag_on(self.text_label)
+        self.bind_drag_on(self.title_label)
+
+
+class BooleanIndicatorBank(tk.Frame):
+
+    class Item(BooleanIndicatorBase, tk.Checkbutton):
+
+        def __init__(self, master, *args, **kwargs):
+            super().__init__(master, *args, **kwargs)
+
+    def __init__(self, master, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+
+
 class Gyro(tk.Canvas):
 
     # TODO: add label with degrees
 
     def __init__(self, master, radius=100, pointer_frac=3/4, circ_pad=5, auto_resize=True, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
-        self.circle = self.create_circle(0, 0, 0, width=2, fill="#808080")
+        self.circle = self.create_circle(0, 0, 0, width=2)
         self.pointer = self.create_line(0, 0, 0, 0, arrow=tk.LAST, width=2)
         self._radians = 0
         self._radius = None
@@ -175,100 +247,12 @@ class DockableGyro(DockableMixin, Gyro):
     pass
 
 
-class Popup(tk.Toplevel):
-    # TODO: Put in tkutils file
-    def __init__(self, master, message, title, *args, **kwargs):
-        super().__init__(master, *args, **kwargs)
-        self.title(title)
-        self.minsize(300, 100)
-        self.focus_get()
-
-        tk.Label(self, text=message).pack()
-
-
-from networktables.instance import NetworkTablesInstance
-import random
-
-
-class TableSim:
-
-    class EntrySim:
-
-        def __init__(self, key, value):
-            self.key = key
-            self.value = value
-            self.type = random.choice([NetworkTablesInstance.EntryTypes.BOOLEAN,
-                                       NetworkTablesInstance.EntryTypes.DOUBLE,
-                                       NetworkTablesInstance.EntryTypes.STRING,
-                                       NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY,
-                                       NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY,
-                                       NetworkTablesInstance.EntryTypes.STRING_ARRAY])
-
-        def getName(self):
-            return self.key
-
-        def getType(self):
-            return self.type
-
-        def setBoolean(self, val):
-            self.value = val
-
-        setDouble = setString = setBooleanArray = setDoubleArray = setStringArray = setBoolean
-
-    PATH_SEPARATOR = '/'
-
-    def __init__(self, data, path=PATH_SEPARATOR):
-        self.data = data
-        self.path = path
-
-        for k, v in self.data.items():
-            if not self.is_sub_table(v) and not self.is_entry(v):
-                self.data[k] = self.EntrySim(k, v)
-
-    def getEntry(self, key):
-        ret = self.data[key]
-        assert self.is_entry(ret)
-        return ret
-
-    def getSubTable(self, key):
-        ret = self.data[key]
-        assert self.is_sub_table(ret)
-        return TableSim(ret, self.path + key + self.PATH_SEPARATOR)
-
-    def getKeys(self):
-        return [key for key, value in self.data.items() if isinstance(value, TableSim.EntrySim)]
-
-    def getSubTables(self):
-        return [key for key, value in self.data.items() if isinstance(value, dict)]
-
-    def containsKey(self, key):
-        try:
-            return isinstance(self.data[key], TableSim.EntrySim)
-        except KeyError:
-            return False
-
-    def containsSubTable(self, key):
-        try:
-            return isinstance(self.data[key], dict)
-        except KeyError:
-            return False
-
-    @staticmethod
-    def is_sub_table(data):
-        return isinstance(data, dict)
-
-    @staticmethod
-    def is_entry(data):
-        return isinstance(data, TableSim.EntrySim)
-
-
 class NTBrowser(tk.Frame):
 
     PARENT_DIR = ".."
     TABLE_FORMAT = "[T] {}"
     ENTRY_FORMAT = "[E] {}"
     BLANK = "-"
-    SCROLL_SCALE = 1/120
 
     class EntryPopup(tk.Toplevel):
 

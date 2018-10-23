@@ -8,7 +8,7 @@ import click
 from networktables.networktables import NetworkTables
 from networktables.instance import NetworkTablesInstance
 import tabulate
-from .. import ntutils
+from spookyconsole.nt import ntutils
 
 
 @click.group()

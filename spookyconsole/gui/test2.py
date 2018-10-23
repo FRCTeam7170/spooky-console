@@ -1,10 +1,19 @@
 
-import tkinter as tk
-from spookyconsole.gui.widgets import NTBrowser, TableSim
+
+class A:
+    def __init__(self):
+        print("A")
 
 
-table = TableSim({"E1": "E"*200, "E2": 2, "E3": 3, "T1": {"T1E1": 1, "T1E2": 2}})
+class B:
+    def __init__(self):
+        print("B")
 
-root = tk.Tk()
-NTBrowser(root, table).pack(fill=tk.BOTH, expand=True)
-root.mainloop()
+
+class C(A, B):
+    def __init__(self):
+        super().__init__()
+        print("C")
+
+
+C()
