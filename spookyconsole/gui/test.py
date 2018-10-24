@@ -1,4 +1,6 @@
 
+import tkinter as tk
+import tkinter.font as tkfont
 from spookyconsole.gui import core
 from spookyconsole.gui import plot
 from spookyconsole.gui import widgets
@@ -17,14 +19,19 @@ def clamping_tan(val, max_):
 
 
 gui = core.GuiManager("Plot Tests")
+font1 = tkfont.Font(gui.root, name="sc_title", family="Courier New", size=10, weight=tkfont.BOLD)
+font2 = tkfont.Font(gui.root, name="sc_normal", family="Courier New", size=8)
+# gui.root.option_add("*Font", font)
 win = gui.new_win()
 win.protocol("WM_DELETE_WINDOW", gui.root.destroy)
-win.init_grid(10, 10).set_resize_protocol(core.Grid.RESIZE_PROTO_ADD_PADDING)
-bib = widgets.DockableBooleanIndicatorBank(win.grid)
-bib.add(0, 0, text="What1")
-bib.add(0, 1, text="What2")
-bib.add(1, 0, text="What3")
-bib.add(1, 1, text="What4")
+win.init_grid(10, 10).set_resize_protocol(core.Grid.RESIZE_PROTO_EXPAND_CELLS)
+bib = widgets.DockableLabelledTextBank(win.grid, ipadx=0, ipady=0, padx=0, pady=0)
+bib.add("Title1", "Text1")
+bib.add("Title2", "Text2")
+bib.add("Title3", "Text3")
+bib.add("Title4", "Text4")
+bib.add("Title5", "Text5")
+bib.add("Title6", "Text6")
 win.grid.register_dockable(bib)
 
 """

@@ -11,7 +11,7 @@ from spookyconsole.nt import ntutils
 
 
 class Popup(tk.Toplevel):
-    # TODO: Put in tkutils file
+    # TODO: Put in tkutils file? (i.e. some file with widgets not specific to spooky console)
     def __init__(self, master, message, title, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.title(title)
@@ -69,24 +69,10 @@ class DockableText(DockableMixin, tk.Text):
     pass
 
 
-class BooleanIndicatorBase:
+class BooleanIndicator(tk.Frame):
 
-    def __init__(self, master, *args, **kwargs):
-        super().__init__(master, *args, **kwargs)
-        self.var = tk.BooleanVar(master)
-
-    @property
-    def value(self):
-        return self.var.get()
-
-    @value.setter
-    def value(self, val):
-        self.var.set(val)
-
-
-class BooleanIndicator(BooleanIndicatorBase, tk.Frame):
-
-    def __init__(self, master, text="", mutable=True, on_colour="green", off_colour="red", *args, **kwargs):
+    def __init__(self, master, text="", mutable=True, on_colour="green", off_colour="red",
+                 font="sc_normal", *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.on_colour = on_colour
         self.off_colour = off_colour
@@ -95,7 +81,7 @@ class BooleanIndicator(BooleanIndicatorBase, tk.Frame):
         self.grid_rowconfigure(0, weight=1)
         self.label = None
         if text:
-            self.label = tk.Label(self, text=text)
+            self.label = tk.Label(self, text=text, font=font)
             self.label.grid()
 
         if mutable:
@@ -103,8 +89,17 @@ class BooleanIndicator(BooleanIndicatorBase, tk.Frame):
             if self.label:
                 self.label.bind("<Button-1>", self._on_click)
 
+        self.var = tk.BooleanVar(master)
         self.var.trace_add("write", self._on_change)
         self.value = True
+
+    @property
+    def value(self):
+        return self.var.get()
+
+    @value.setter
+    def value(self, val):
+        self.var.set(val)
 
     def _on_change(self, *_):
         colour = self.on_colour if self.value else self.off_colour
@@ -124,12 +119,19 @@ class DockableBooleanIndicator(DockableMixin, BooleanIndicator):
             self.bind_drag_on(self.label)
 
 
-class LabelledTextBase:
+class LabelledText(tk.Frame):
 
-    def __init__(self, master, title, *args, text="", **kwargs):
+    def __init__(self, master, title, text="", title_font="sc_title", text_font="sc_normal", *args, **kwargs):
         super().__init__(master, *args, **kwargs)
-        self.text_var = tk.StringVar(self, text)
+
         self.title_var = tk.StringVar(self, title)
+        self.text_var = tk.StringVar(self, text)
+
+        self.title_label = tk.Label(self, textvar=self.title_var, font=title_font)
+        self.text_label = tk.Label(self, textvar=self.text_var, font=text_font)
+
+        self.title_label.pack(fill=tk.BOTH, expand=True)
+        self.text_label.pack(fill=tk.BOTH, expand=True)
 
     @property
     def text(self):
@@ -148,18 +150,6 @@ class LabelledTextBase:
         self.title_var.set(val)
 
 
-class LabelledText(LabelledTextBase, tk.Frame):
-
-    def __init__(self, master, title, text="", *args, **kwargs):
-        super().__init__(master, title, text=text, *args, **kwargs)
-
-        self.text_label = tk.Label(self, textvar=self.text_var)
-        self.title_label = tk.Label(self, textvar=self.title_var)
-
-        self.text_label.pack(fill=tk.BOTH, expand=True)
-        self.title_label.pack(fill=tk.BOTH, expand=True)
-
-
 class DockableLabelledText(DockableMixin, LabelledText):
 
     def __init__(self, master, title, text="", width=1, height=1, *args, **kwargs):
@@ -168,36 +158,34 @@ class DockableLabelledText(DockableMixin, LabelledText):
         self.bind_drag_on(self.title_label)
 
 
-class BooleanIndicatorBank(tk.Frame):
+class BankBase(tk.Frame):
 
-    def __init__(self, master, ipadx=2, ipady=2, padx=1, pady=1, *args, **kwargs):
+    def __init__(self, master, widget_cls, ipadx=2, ipady=2, padx=1, pady=1, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
-        self.bis = []
-        self.ipadx = ipadx
-        self.ipady = ipady
-        self.padx = padx
-        self.pady = pady
+        self.widgets = []
+        self.widget_cls = widget_cls
+        self.pack_opts = {"ipadx": ipadx, "ipady": ipady, "padx": padx, "pady": pady}
 
-    def add(self, row, column, text="", mutable=True, on_colour="green", off_colour="red", *args, **kwargs):
-        bi = BooleanIndicator(self, text, mutable, on_colour, off_colour, *args, **kwargs)
-        self.bis.append(bi)
-        self._assure_resizeable(row, column)
-        bi.grid(row=row, column=column, sticky=tk.NSEW,
-                ipadx=self.ipadx, ipady=self.ipady, padx=self.padx, pady=self.pady)
-        return bi
+    def add(self, *args, **kwargs):
+        widget = self.widget_cls(self, *args, **kwargs)
+        self.widgets.append(widget)
+        widget.pack(fill=tk.BOTH, expand=True, **self.pack_opts)
+        return widget
 
-    def remove(self, bi):
-        bi.destroy()
-        self.bis.remove(bi)
+    def remove(self, widget):
+        widget.destroy()
+        self.widgets.remove(widget)
 
-    def _assure_resizeable(self, row, col):
-        self.grid_rowconfigure(row, weight=1)
-        self.grid_columnconfigure(col, weight=1)
+
+class BooleanIndicatorBank(BankBase):
+
+    def __init__(self, master, *args, **kwargs):
+        super().__init__(master, BooleanIndicator, *args, **kwargs)
 
 
 class DockableBooleanIndicatorBank(DockableMixin, BooleanIndicatorBank):
 
-    def __init__(self, master, width=2, height=2, *args, **kwargs):
+    def __init__(self, master, width=2, height=3, *args, **kwargs):
         super().__init__(master, width, height, *args, **kwargs)
 
     def add(self, *args, **kwargs):
@@ -208,23 +196,29 @@ class DockableBooleanIndicatorBank(DockableMixin, BooleanIndicatorBank):
         return bi
 
 
-class BooleanIndicatorLabelledBank(BooleanIndicatorBank):
-
-    def __init__(self, master, text, ipadx=2, ipady=2, padx=1, pady=1, *args, **kwargs):
-        self.labelled_frame = tk.LabelFrame(master, text=text, *args, **kwargs)
-        super().__init__(self.labelled_frame, ipadx, ipady, padx, pady)
-        self.pack(fill=tk.BOTH, expand=True)
-
-
-class LabelledTextBank(tk.Frame):
-
-    class Item(LabelledTextBase, tk.Checkbutton):
-
-        def __init__(self, master, *args, **kwargs):
-            super().__init__(master, *args, **kwargs)
+class LabelledTextBank(BankBase):
 
     def __init__(self, master, *args, **kwargs):
-        super().__init__(master, *args, **kwargs)
+        super().__init__(master, LabelledText, *args, **kwargs)
+
+    def add(self, *args, **kwargs):
+        lt = super().add(*args, **kwargs)
+        lt.title_label.pack(side=tk.LEFT, fill=tk.Y, expand=True)
+        lt.text_label.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        return lt
+
+
+class DockableLabelledTextBank(DockableMixin, LabelledTextBank):
+
+    def __init__(self, master, width=2, height=3, *args, **kwargs):
+        super().__init__(master, width, height, *args, **kwargs)
+
+    def add(self, *args, **kwargs):
+        lt = super().add(*args, **kwargs)
+        self.bind_drag_on(lt)
+        self.bind_drag_on(lt.title_label)
+        self.bind_drag_on(lt.text_label)
+        return lt
 
 
 class Gyro(tk.Canvas):
@@ -306,6 +300,8 @@ class NTBrowser(tk.Frame):
 
         DATA_HEIGHT = 1
         DATA_WIDTH = 40
+        DATA_FONT = "sc_normal"
+        LABEL_FONT = "sc_normal"
 
         def __init__(self, master, entry):
             super().__init__(master)
@@ -316,16 +312,17 @@ class NTBrowser(tk.Frame):
             self.grid_columnconfigure(1, weight=1)
             self.grid_rowconfigure(1, weight=1)
 
-            tk.Label(self, text="TYPE:").grid(row=0, column=0)
+            tk.Label(self, text="TYPE:", font=self.LABEL_FONT).grid(row=0, column=0)
             tk.Label(self, text=ntutils.type_constant_to_str(entry.getType())).grid(row=0, column=1)
 
-            tk.Label(self, text="DATA:").grid(row=1, column=0)
-            data = tk.Text(self, height=self.DATA_HEIGHT, width=self.DATA_WIDTH)
+            tk.Label(self, text="DATA:", font=self.LABEL_FONT).grid(row=1, column=0)
+            data = tk.Text(self, height=self.DATA_HEIGHT, width=self.DATA_WIDTH, font=self.DATA_FONT)
             data.insert(tk.END, str(entry.value))
             data.configure(state=tk.DISABLED)
             data.grid(row=1, column=1, sticky=tk.NSEW)
 
-    def __init__(self, master, root_table, *args, **kwargs):
+    def __init__(self, master, root_table, header_font="sc_title", label_font="sc_normal",
+                 btn_font="sc_normal", *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.root_table = root_table
         self.hierarchy = deque((root_table,))
@@ -337,16 +334,16 @@ class NTBrowser(tk.Frame):
         self._curr_error_popup = None
 
         self.scrollbar = tk.Scrollbar(self, command=self._merged_yview)
-        self.key_label = tk.Label(self, text="KEY")
+        self.key_label = tk.Label(self, text="KEY", font=header_font)
         self.key_listbox = tk.Listbox(self, selectmode=tk.EXTENDED, yscrollcommand=self.scrollbar.set)
-        self.value_label = tk.Label(self, text="VALUE")
+        self.value_label = tk.Label(self, text="VALUE", font=header_font)
         self.value_listbox = tk.Listbox(self, selectmode=tk.EXTENDED, yscrollcommand=self.scrollbar.set)
 
         self.lower_frame = tk.Frame(self)
-        self.insert_label = tk.Label(self.lower_frame, text="INSERT:")
+        self.insert_label = tk.Label(self.lower_frame, text="INSERT:", font=label_font)
         self.insert_entry = tk.Entry(self.lower_frame, state=tk.DISABLED)
-        self.insert_button = tk.Button(self.lower_frame, command=self._insert_callback, text="Enter")
-        self.reload_button = tk.Button(self.lower_frame, command=self._reload_entries(), text="Reload")
+        self.insert_button = tk.Button(self.lower_frame, command=self._insert_callback, text="Enter", font=btn_font)
+        self.reload_button = tk.Button(self.lower_frame, command=self._reload_entries(), text="Reload", font=btn_font)
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -493,6 +490,8 @@ class DockableNTBrowser(DockableMixin, NTBrowser):
 
 
 # TODO: Robot SVG?
-# TODO: Motor monitor
+# TODO: Motor monitor, kinematics info display
+# TODO: Power info display
 # TODO: Log output
 # TODO: having args&kwargs for all tk widget subclasses is weird in some cases involving multiple inheritance... remove?
+# TODO: Camera?
