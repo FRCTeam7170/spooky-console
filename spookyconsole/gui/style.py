@@ -38,8 +38,12 @@ BOOL_TRUE = MUTE_GREEN
 BOOL_FALSE = MUTE_RED
 
 
-FONT_TITLE = None
-FONT_NORMAL = None
+FONT_MONOSPACE_TITLE = None
+FONT_MONOSPACE_NORMAL = None
+FONT_SERIF_TITLE = None
+FONT_SERIF_NORMAL = None
+FONT_SANS_SERIF_TITLE = None
+FONT_SANS_SERIF_NORMAL = None
 
 
 _tkButton = tk.Button
@@ -69,8 +73,8 @@ class StyleableMixin:
     TK_DEFAULT_STYLES = None
     DEFAULT_STYLES = None
 
-    def __init__(self, *args, style=None, **overrides):
-        super().__init__(*args)
+    def __init__(self, master=None, cnf={}, *args, style=None, **overrides):
+        super().__init__(master, cnf, *args)
         self._style = None
         self._overrides = None
         self._assure_default_dicts_exist()
@@ -89,6 +93,8 @@ class StyleableMixin:
         else:
             self._overrides = styled
         if style:
+            if self._style:
+                self._style.unregister_styleable(self)
             self._style = style
             style.register_styleable(self)
         elif self._style and not keep_style:
@@ -210,9 +216,7 @@ class Toplevel(StyleableMixin, tk.Toplevel):
 
 class Style:
 
-    DEFAULTS = {
-        "font": "FONT_NORMAL"
-    }
+    DEFAULTS = {}
 
     def __init__(self, *parents, **kwargs):
         self._dict = kwargs
@@ -297,6 +301,15 @@ def unpatch_tk_widgets():
 
 
 @contextmanager
+def patch():
+    try:
+        patch_tk_widgets()
+        yield
+    finally:
+        unpatch_tk_widgets()
+
+
+@contextmanager
 def stylize(style, **overrides):
     global _global_style
     try:
@@ -307,6 +320,33 @@ def stylize(style, **overrides):
 
 
 def init_fonts(root):
-    global FONT_TITLE, FONT_NORMAL
-    FONT_TITLE = tkfont.Font(root, name="FONT_TITLE", family="Courier New", size=10, weight=tkfont.BOLD)
-    FONT_NORMAL = tkfont.Font(root, name="FONT_NORMAL", family="Courier New", size=8)
+    global FONT_MONOSPACE_TITLE, FONT_MONOSPACE_NORMAL,\
+        FONT_SERIF_TITLE, FONT_SERIF_NORMAL,\
+        FONT_SANS_SERIF_TITLE, FONT_SANS_SERIF_NORMAL
+
+    FONT_MONOSPACE_TITLE = tkfont.Font(root, size=10,
+                                       name="FONT_MONOSPACE_TITLE",
+                                       family="Courier",
+                                       weight=tkfont.BOLD)
+
+    FONT_MONOSPACE_NORMAL = tkfont.Font(root, size=8,
+                                        name="FONT_MONOSPACE_NORMAL",
+                                        family="Courier")
+
+    FONT_SERIF_TITLE = tkfont.Font(root, size=10,
+                                   name="FONT_SERIF_TITLE",
+                                   family="Helvetica",
+                                   weight=tkfont.BOLD)
+
+    FONT_SERIF_NORMAL = tkfont.Font(root, size=8,
+                                        name="FONT_SERIF_NORMAL",
+                                        family="Helvetica")
+
+    FONT_SANS_SERIF_TITLE = tkfont.Font(root, size=10,
+                                        name="FONT_SANS_SERIF_TITLE",
+                                        family="Times",
+                                        weight=tkfont.BOLD)
+
+    FONT_SANS_SERIF_NORMAL = tkfont.Font(root, size=8,
+                                         name="FONT_SANS_SERIF_NORMAL",
+                                         family="Times")

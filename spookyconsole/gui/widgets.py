@@ -492,8 +492,11 @@ class DockableNTBrowser(DockableMixin, NTBrowser):
         self.bind_drag_on(self.insert_label)
 
 
-# TODO: Robot SVG?
 # TODO: Motor monitor, kinematics info display
 # TODO: Power info display
 # TODO: Log output
 # TODO: Camera?
+# TODO: start working on complementary code in spooky-lib
+# TODO: start writing actual click command code to interface with gui
+# TODO: work out gui serialization mechanism and specification
+# TODO: write networktables simulator?

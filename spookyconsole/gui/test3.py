@@ -1,32 +1,25 @@
 
-class Test:
+import cv2
+from PIL import Image
+import pprint
+import numpy as np
 
-    WHAT = 1
-
-    def self_inc(self):
-        self.WHAT += 1
-
-    def cls_inc(self):
-        self.__class__.WHAT += 1
-
-    def self_set(self, v):
-        self.WHAT = v
-
-    def cls_set(self, v):
-        self.__class__.WHAT = v
+file = "../../data/images/back.gif"
+fg = "#999999"
 
 
-class SubTest(Test):
-    pass
+def _hex_str_to_rgb(colour_str):
+    colour_str = colour_str.strip("#")
+    r = int(colour_str[0:2], 16)
+    g = int(colour_str[2:4], 16)
+    b = int(colour_str[4:6], 16)
+    return r, g, b
 
 
-class Sub2Test(Test):
-    pass
-
-
-def p(*args):
-    print(args, type(args))
-
-
-p(1, 2, 3)
-
+image = Image.open(file)
+image.load()
+arr = np.array(image)
+arr = cv2.cvtColor(arr, cv2.COLOR_GRAY2RGBA)
+cv2.imshow("s", arr)
+cv2.waitKey()
+print(arr)
