@@ -6,73 +6,64 @@ TODO
 import tkinter as tk
 import math
 from collections import deque
-from .core import DockableMixin
 from spookyconsole.nt import ntutils
+from spookyconsole.gui.core import DockableMixin
+import spookyconsole.gui.style as style
+import spookyconsole.gui.popup as popup
 
 
-class Popup(tk.Toplevel):
-    # TODO: Put in tkutils file? (i.e. some file with widgets not specific to spooky console)
-    def __init__(self, master, message, title, *args, **kwargs):
-        super().__init__(master, *args, **kwargs)
-        self.title(title)
-        self.minsize(300, 100)
-        self.focus_get()
-
-        tk.Label(self, text=message).pack()
-
-
-class DockableLabel(DockableMixin, tk.Label):
+class DockableButton(DockableMixin, style.Button):
     pass
 
 
-class DockableEntry(DockableMixin, tk.Entry):
+class DockableCanvas(DockableMixin, style.Canvas):
     pass
 
 
-class DockableCheckbutton(DockableMixin, tk.Checkbutton):
+class DockableCheckbutton(DockableMixin, style.Checkbutton):
     pass
 
 
-class DockableLabelFrame(DockableMixin, tk.LabelFrame):
+class DockableEntry(DockableMixin, style.Entry):
     pass
 
 
-class DockableButton(DockableMixin, tk.Button):
+class DockableFrame(DockableMixin, style.Frame):
     pass
 
 
-class DockableFrame(DockableMixin, tk.Frame):
+class DockableLabel(DockableMixin, style.Label):
     pass
 
 
-class DockableListbox(DockableMixin, tk.Listbox):
+class DockableLabelFrame(DockableMixin, style.LabelFrame):
     pass
 
 
-class DockableRadiobutton(DockableMixin, tk.Radiobutton):
+class DockableListbox(DockableMixin, style.Listbox):
     pass
 
 
-class DockableScale(DockableMixin, tk.Scale):
+class DockableRadiobutton(DockableMixin, style.Radiobutton):
     pass
 
 
-class DockableSpinbox(DockableMixin, tk.Spinbox):
+class DockableScale(DockableMixin, style.Scale):
     pass
 
 
-class DockableCanvas(DockableMixin, tk.Canvas):
+class DockableSpinbox(DockableMixin, style.Spinbox):
     pass
 
 
-class DockableText(DockableMixin, tk.Text):
+class DockableText(DockableMixin, style.Text):
     pass
 
 
-class BooleanIndicator(tk.Frame):
+class BooleanIndicator(style.Frame):
 
     def __init__(self, master, text="", mutable=True, on_colour="green", off_colour="red",
-                 font="sc_normal", *args, **kwargs):
+                 label_style=None, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.on_colour = on_colour
         self.off_colour = off_colour
@@ -81,7 +72,7 @@ class BooleanIndicator(tk.Frame):
         self.grid_rowconfigure(0, weight=1)
         self.label = None
         if text:
-            self.label = tk.Label(self, text=text, font=font)
+            self.label = style.Label(self, style=(label_style or kwargs.get("style")), text=text)
             self.label.grid()
 
         if mutable:
@@ -119,16 +110,17 @@ class DockableBooleanIndicator(DockableMixin, BooleanIndicator):
             self.bind_drag_on(self.label)
 
 
-class LabelledText(tk.Frame):
+class LabelledText(style.Frame):
 
-    def __init__(self, master, title, text="", title_font="sc_title", text_font="sc_normal", *args, **kwargs):
+    def __init__(self, master, title, text="", title_style=None, text_style=None, *args, **kwargs):
+        def_style = kwargs.get("style")
         super().__init__(master, *args, **kwargs)
 
         self.title_var = tk.StringVar(self, title)
         self.text_var = tk.StringVar(self, text)
 
-        self.title_label = tk.Label(self, textvar=self.title_var, font=title_font)
-        self.text_label = tk.Label(self, textvar=self.text_var, font=text_font)
+        self.title_label = style.Label(self, style=(title_style or def_style), textvar=self.title_var)
+        self.text_label = style.Label(self, style=(text_style or def_style), textvar=self.text_var)
 
         self.title_label.pack(fill=tk.BOTH, expand=True)
         self.text_label.pack(fill=tk.BOTH, expand=True)
@@ -158,7 +150,7 @@ class DockableLabelledText(DockableMixin, LabelledText):
         self.bind_drag_on(self.title_label)
 
 
-class BankBase(tk.Frame):
+class BankBase(style.Frame):
 
     def __init__(self, master, widget_cls, ipadx=2, ipady=2, padx=1, pady=1, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
@@ -221,9 +213,10 @@ class DockableLabelledTextBank(DockableMixin, LabelledTextBank):
         return lt
 
 
-class Gyro(tk.Canvas):
+class Gyro(style.Canvas):
 
     # TODO: add label with degrees
+    # TODO: style options for canvas items
 
     def __init__(self, master, radius=100, pointer_frac=3/4, circ_pad=5, auto_resize=True, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
@@ -289,40 +282,29 @@ class DockableGyro(DockableMixin, Gyro):
     pass
 
 
-class NTBrowser(tk.Frame):
+class NTBrowser(style.Frame):
 
     PARENT_DIR = ".."
     TABLE_FORMAT = "[T] {}"
     ENTRY_FORMAT = "[E] {}"
     BLANK = "-"
 
-    class EntryPopup(tk.Toplevel):
-
-        DATA_HEIGHT = 1
-        DATA_WIDTH = 40
-        DATA_FONT = "sc_normal"
-        LABEL_FONT = "sc_normal"
-
-        def __init__(self, master, entry):
-            super().__init__(master)
-            self.title("Info: {}".format(entry.getName()))
-            self.minsize(300, 100)
-            self.focus_get()
-
-            self.grid_columnconfigure(1, weight=1)
-            self.grid_rowconfigure(1, weight=1)
-
-            tk.Label(self, text="TYPE:", font=self.LABEL_FONT).grid(row=0, column=0)
-            tk.Label(self, text=ntutils.type_constant_to_str(entry.getType())).grid(row=0, column=1)
-
-            tk.Label(self, text="DATA:", font=self.LABEL_FONT).grid(row=1, column=0)
-            data = tk.Text(self, height=self.DATA_HEIGHT, width=self.DATA_WIDTH, font=self.DATA_FONT)
-            data.insert(tk.END, str(entry.value))
-            data.configure(state=tk.DISABLED)
-            data.grid(row=1, column=1, sticky=tk.NSEW)
-
-    def __init__(self, master, root_table, header_font="sc_title", label_font="sc_normal",
-                 btn_font="sc_normal", *args, **kwargs):
+    def __init__(self, master, root_table,
+                 scrollbar_style=None,
+                 listbox_style=None,
+                 header_style=None,
+                 label_style=None,
+                 entry_style=None,
+                 button_style=None,
+                 info_text_style=None,
+                 *args, **kwargs):
+        def_style = kwargs.get("style")
+        scrollbar_style = scrollbar_style or def_style
+        listbox_style = listbox_style or def_style
+        header_style = header_style or def_style
+        label_style = label_style or def_style
+        entry_style = entry_style or def_style
+        button_style = button_style or def_style
         super().__init__(master, *args, **kwargs)
         self.root_table = root_table
         self.hierarchy = deque((root_table,))
@@ -330,20 +312,27 @@ class NTBrowser(tk.Frame):
         self._items = []
         self._curr_indices = None
         self._curr_scroll_row = 0
-        self._curr_entry_popup = None
-        self._curr_error_popup = None
+        self._entry_popup = popup.PopupManager(self, title_fmt="Info: {}", style=def_style)
+        self._header_style = header_style
+        self._label_style = label_style
+        self._button_style = button_style
+        self._info_text_style = info_text_style or def_style
 
-        self.scrollbar = tk.Scrollbar(self, command=self._merged_yview)
-        self.key_label = tk.Label(self, text="KEY", font=header_font)
-        self.key_listbox = tk.Listbox(self, selectmode=tk.EXTENDED, yscrollcommand=self.scrollbar.set)
-        self.value_label = tk.Label(self, text="VALUE", font=header_font)
-        self.value_listbox = tk.Listbox(self, selectmode=tk.EXTENDED, yscrollcommand=self.scrollbar.set)
+        self.scrollbar = style.Scrollbar(self, style=scrollbar_style, command=self._merged_yview)
+        self.key_label = style.Label(self, style=header_style, text="KEY")
+        self.key_listbox = style.Listbox(self, style=listbox_style, selectmode=tk.EXTENDED,
+                                         yscrollcommand=self.scrollbar.set)
+        self.value_label = style.Label(self, style=header_style, text="VALUE")
+        self.value_listbox = style.Listbox(self, style=listbox_style, selectmode=tk.EXTENDED,
+                                           yscrollcommand=self.scrollbar.set)
 
-        self.lower_frame = tk.Frame(self)
-        self.insert_label = tk.Label(self.lower_frame, text="INSERT:", font=label_font)
-        self.insert_entry = tk.Entry(self.lower_frame, state=tk.DISABLED)
-        self.insert_button = tk.Button(self.lower_frame, command=self._insert_callback, text="Enter", font=btn_font)
-        self.reload_button = tk.Button(self.lower_frame, command=self._reload_entries(), text="Reload", font=btn_font)
+        self.lower_frame = style.Frame(self, style=def_style)
+        self.insert_label = style.Label(self.lower_frame, style=label_style, text="INSERT:")
+        self.insert_entry = style.Entry(self.lower_frame, style=entry_style, state=tk.DISABLED)
+        self.insert_button = style.Button(self.lower_frame, style=button_style,
+                                          command=self._insert_callback, text="Enter")
+        self.reload_button = style.Button(self.lower_frame, style=button_style,
+                                          command=self._reload_entries(), text="Reload")
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -411,9 +400,25 @@ class NTBrowser(tk.Frame):
         self._create_entry_popup(idx)
 
     def _create_entry_popup(self, idx):
-        if self._curr_entry_popup:
-            self._curr_entry_popup.destroy()
-        self._curr_entry_popup = self.EntryPopup(self, self._items[idx])
+        entry = self._items[idx]
+
+        frame = style.Frame(self._entry_popup, style=self._style)
+        frame.grid_columnconfigure(1, weight=1)
+        frame.grid_rowconfigure(1, weight=1)
+
+        style.Label(self, style=self._header_style, text="TYPE:").grid(row=0, column=0)
+        style.Label(self, style=self._label_style, text=ntutils.type_constant_to_str(entry.getType()))\
+            .grid(row=0, column=1)
+
+        style.Label(self, style=self._header_style, text="DATA:").grid(row=1, column=0)
+        data = style.Text(self, style=self._info_text_style)
+        data.insert(tk.END, str(entry.value))
+        data.configure(state=tk.DISABLED)
+        data.grid(row=1, column=1, sticky=tk.NSEW)
+
+        if self._entry_popup.popup_open:
+            self._entry_popup.close_current_popup()
+        self._entry_popup.create(frame, entry.getName())
 
     def _populate(self, table):
         self._curr_scroll_row = 0
@@ -447,10 +452,8 @@ class NTBrowser(tk.Frame):
                 ntutils.set_entry_by_type(self._items[idx], value)
             self._reload_entries()
         except ValueError as e:
-            # TODO: This could use some prettification
-            if self._curr_error_popup:
-                self._curr_error_popup.destroy()
-            self._curr_error_popup = Popup(self, "Error: {}".format(str(e)), "Error")
+            popup.dialog("Type Error", "Error: {}".format(str(e)), popup.BUTTONS_OK,
+                         frame_style=self._style, message_style=self._label_style, button_style=self._button_style)
 
     def _disable_entry(self):
         self.insert_entry.delete(0, tk.END)
@@ -493,5 +496,4 @@ class DockableNTBrowser(DockableMixin, NTBrowser):
 # TODO: Motor monitor, kinematics info display
 # TODO: Power info display
 # TODO: Log output
-# TODO: having args&kwargs for all tk widget subclasses is weird in some cases involving multiple inheritance... remove?
 # TODO: Camera?

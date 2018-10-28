@@ -1,23 +1,32 @@
 
-import tkinter as tk
+class Test:
+
+    WHAT = 1
+
+    def self_inc(self):
+        self.WHAT += 1
+
+    def cls_inc(self):
+        self.__class__.WHAT += 1
+
+    def self_set(self, v):
+        self.WHAT = v
+
+    def cls_set(self, v):
+        self.__class__.WHAT = v
 
 
-_tkButton = tk.Button
-_tkCanvas = tk.Canvas
-_tkCheckbutton = tk.Checkbutton
-_tkEntry = tk.Entry
-_tkFrame = tk.Frame
-_tkLabel = tk.Label
-_tkLabelFrame = tk.LabelFrame
-_tkListbox = tk.Listbox
-_tkRadiobutton = tk.Radiobutton
-_tkScale = tk.Scale
-_tkSpinbox = tk.Spinbox
-_tkText = tk.Text
+class SubTest(Test):
+    pass
 
 
-common_opts = set()
-for k, v in globals().copy().items():
-    if k.startswith("_tk"):
-        common_opts = common_opts.union(v().configure().keys())
-print(common_opts)
+class Sub2Test(Test):
+    pass
+
+
+def p(*args):
+    print(args, type(args))
+
+
+p(1, 2, 3)
+

@@ -7,6 +7,7 @@ import tkinter as tk
 import numpy as np
 import asyncio
 from collections import namedtuple
+import spookyconsole.gui.style as style
 
 
 Cell = namedtuple("Cell", ("column", "row"))
@@ -20,7 +21,7 @@ Point = namedtuple("Point", ("x", "y"))
 BBox = namedtuple("BBox", ("x", "y", "w", "h"))
 
 
-class ScrollCanvas(tk.Canvas):
+class ScrollCanvas(style.Canvas):
 
     MAX_SCROLLBAR_POS = (0, 1)
 
@@ -30,12 +31,16 @@ class ScrollCanvas(tk.Canvas):
                  scroll_press_scale_x=1/2,
                  scroll_press_scale_y=1/2,
                  scroll_press_delay=50,
+                 scrollbar_style=None,
+                 frame_style=None,
                  *args, **kwargs):
-        self.frame = tk.Frame(master)
+        def_style = kwargs.get("style")
+        scrollbar_style = scrollbar_style or def_style
+        self.frame = style.Frame(master, style=(frame_style or def_style))
         super().__init__(self.frame, *args, **kwargs)
 
-        self.x_scrollbar = tk.Scrollbar(self.frame, command=self.xview, orient=tk.HORIZONTAL)
-        self.y_scrollbar = tk.Scrollbar(self.frame, command=self.yview)
+        self.x_scrollbar = style.Scrollbar(self.frame, style=scrollbar_style, command=self.xview, orient=tk.HORIZONTAL)
+        self.y_scrollbar = style.Scrollbar(self.frame, style=scrollbar_style, command=self.yview)
         self.configure(xscrollcommand=self.x_scrollbar.set, yscrollcommand=self.y_scrollbar.set,
                        xscrollincrement=1, yscrollincrement=1, scrollregion=(0, 0, width, height))
 
@@ -156,7 +161,7 @@ class Grid(ScrollCanvas):
     MIN_CELL_WIDTH = 25
     MIN_CELL_HEIGHT = 25
 
-    # Default visuals.
+    # Default visuals. TODO: change this
     HIGHLIGHT_VISUAL_DEFAULT = VisualSpec(2, "#A00000", "#303030")
     GRID_VISUAL_DEFAULT = VisualSpec(1, "#101010", "#808080")
 
@@ -819,20 +824,13 @@ class Grid(ScrollCanvas):
         return n if n >= min_ else min_
 
 
-class Window(tk.Toplevel):
-    # TODO: init_... methods...?
+class Window(style.Toplevel):
 
-    def __init__(self, root, *args, **kwargs):
-        super().__init__(root, *args, **kwargs)
+    def __init__(self, root, width, height, *args, **kwargs):
+        super().__init__(root, style=kwargs.get("style"))
 
-        self.grid = None
-
-    def init_grid(self, width, height):
-        if self.grid is not None:
-            raise RuntimeError("grid has already been initialized")
-        self.grid = Grid(self, width, height)
+        self.grid = Grid(self, width, height, *args, **kwargs)
         self.grid.frame.pack(fill=tk.BOTH, expand=True)
-        return self.grid
 
 
 class DockableMixin:
@@ -893,8 +891,8 @@ class GuiManager:
         except tk.TclError:
             print("Tkinter error occurred.")  # TODO: Temp?
 
-    def new_win(self):
-        win = Window(self.root)
+    def new_win(self, width, height, *args, **kwargs):
+        win = Window(self.root, width, height, *args, **kwargs)
         num = self._get_next_win_num()
         win.title(self.prog_name + " ({})".format(num))
         self.windows[num] = win

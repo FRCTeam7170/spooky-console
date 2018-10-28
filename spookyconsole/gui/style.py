@@ -1,8 +1,7 @@
 
 import tkinter as tk
-from tkinter import font as tkfont
+import tkinter.font as tkfont
 from contextlib import contextmanager
-from collections import deque
 
 
 GRAY_SCALE_0 = "#000000"
@@ -38,8 +37,9 @@ UNKNOWN_TEAM = GRAY_SCALE_B
 BOOL_TRUE = MUTE_GREEN
 BOOL_FALSE = MUTE_RED
 
-FONT_FAMILY_MONOSPACED = "Courier"
-FONT_FAMILY_REGULAR = "Arial"
+
+FONT_TITLE = None
+FONT_NORMAL = None
 
 
 _tkButton = tk.Button
@@ -60,203 +60,224 @@ _tkText = tk.Text
 _tkToplevel = tk.Toplevel
 
 
-_style = deque()
-_patched = False
+_global_style = None
 
 
-class StyledMixin:
+class StyleableMixin:
 
     STYLED_OPTS = []
+    TK_DEFAULT_STYLES = None
+    DEFAULT_STYLES = None
 
-    def __init__(self, *args, **kwargs):
-        if _style:
-            kwargs = self._apply_style_to_dict(kwargs)
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, style=None, **overrides):
+        super().__init__(*args)
+        self._style = None
+        self._overrides = None
+        self._assure_default_dicts_exist()
+        self.apply_style(style or _global_style, **overrides)
 
-    def restyle(self, **overrides):
-        self.configure(**self._apply_style_to_dict(overrides))
+    def apply_style(self, style=None, *, keep_style=False, keep_overrides=False, **overrides):
+        functional, styled = {}, {}
+        for k, v in overrides.items():
+            if k in self.STYLED_OPTS:
+                styled[k] = v
+            else:
+                functional[k] = v
+        self.configure(functional)
+        if keep_overrides:
+            self._overrides.update(styled)
+        else:
+            self._overrides = styled
+        if style:
+            self._style = style
+            style.register_styleable(self)
+        elif self._style and not keep_style:
+            self._style.unregister_styleable(self)
+            self._style = None
+        self.update_style()
 
-    def _apply_style_to_dict(self, conf):
-        style = _style[-1]
-        for opt in self.STYLED_OPTS:
-            if opt in style and opt not in conf:
-                conf[opt] = style[opt]
-        return conf
+    def update_style(self):
+        tk_defaults = self.__class__.TK_DEFAULT_STYLES
+        styles_dict = tk_defaults.copy()
+        styles_dict.update(self.__class__.DEFAULT_STYLES)
+        if self._style:
+            styles_dict.update(self._style.get_relevant_styles(self))
+        styles_dict.update(self._overrides)
+        tk_defaults.update((k, self.cget(k)) for k in styles_dict if k not in tk_defaults)
+        self.configure(styles_dict)
+
+    @classmethod
+    def _assure_default_dicts_exist(cls):
+        if cls.TK_DEFAULT_STYLES is None:
+            cls.TK_DEFAULT_STYLES = {}
+        if cls.DEFAULT_STYLES is None:
+            cls.DEFAULT_STYLES = {}
+
+    @classmethod
+    def set_defaults(cls, keep_existing=True, **defaults):
+        if keep_existing:
+            cls.DEFAULTS.update(defaults)
+        else:
+            cls.DEFAULTS = defaults
 
 
-class StyledButton(StyledMixin, tk.Button):
+# TODO: Styleable Tk (root)
+
+
+class Button(StyleableMixin, tk.Button):
     STYLED_OPTS = ["font", "bg", "activebackground", "fg", "activeforeground", "disabledforeground", "bd",
                    "highlightcolor", "highlightbackground", "highlightthickness", "relief", "overrelief", "justify"]
 
 
-class StyledCanvas(StyledMixin, tk.Canvas):
+class Canvas(StyleableMixin, tk.Canvas):
     STYLED_OPTS = ["bg", "bd", "selectbackground", "selectborderwidth", "selectforeground", "highlightcolor",
                    "highlightbackground", "highlightthickness", "relief"]
 
 
-class StyledCheckbutton(StyledMixin, tk.Checkbutton):
+class Checkbutton(StyleableMixin, tk.Checkbutton):
     STYLED_OPTS = ["font", "bg", "activebackground", "fg", "activeforeground", "disabledforeground", "bd",
                    "highlightcolor", "highlightbackground", "highlightthickness", "relief", "overrelief", "justify",
                    "indicatoron", "offrelief", "selectcolor"]
 
 
-class StyledEntry(StyledMixin, tk.Entry):
+class Entry(StyleableMixin, tk.Entry):
     STYLED_OPTS = ["font", "bg", "disabledbackground", "fg", "disabledforeground", "readonlybackground", "bd",
                    "highlightcolor", "highlightbackground", "highlightthickness", "relief", "justify",
                    "selectbackground", "selectborderwidth", "selectforeground"]
 
 
-class StyledFrame(StyledMixin, tk.Frame):
+class Frame(StyleableMixin, tk.Frame):
     STYLED_OPTS = ["bg", "bd", "highlightcolor", "highlightbackground", "highlightthickness", "relief"]
 
 
-class StyledLabel(StyledMixin, tk.Label):
+class Label(StyleableMixin, tk.Label):
     STYLED_OPTS = ["font", "bg", "activebackground", "fg", "activeforeground", "disabledforeground", "bd",
                    "highlightcolor", "highlightbackground", "highlightthickness", "relief", "justify"]
 
 
-class StyledLabelFrame(StyledMixin, tk.LabelFrame):
+class LabelFrame(StyleableMixin, tk.LabelFrame):
     STYLED_OPTS = ["font", "bg", "fg", "bd", "highlightcolor", "highlightbackground", "highlightthickness", "relief",
                    "labelanchor"]
 
 
-class StyledListbox(StyledMixin, tk.Listbox):
+class Listbox(StyleableMixin, tk.Listbox):
     STYLED_OPTS = ["font", "bg", "activestyle", "fg", "disabledforeground", "bd", "relief", "highlightcolor",
                    "highlightbackground", "highlightthickness", "selectbackground", "selectborderwidth",
                    "selectforeground"]
 
 
-class StyledMenu(StyledMixin, tk.Menu):
+class Menu(StyleableMixin, tk.Menu):
     STYLED_OPTS = ["font", "bg", "activebackground", "fg", "activeforeground", "disabledforeground", "bd",
                    "selectcolor", "relief", "activeborderwidth"]
 
 
-class StyledPanedWindow(StyledMixin, tk.PanedWindow):
+class PanedWindow(StyleableMixin, tk.PanedWindow):
     STYLED_OPTS = ["bg", "bd", "relief", "sashrelief", "showhandle"]
 
 
-class StyledRadiobutton(StyledMixin, tk.Radiobutton):
+class Radiobutton(StyleableMixin, tk.Radiobutton):
     STYLED_OPTS = ["font", "bg", "activebackground", "fg", "activeforeground", "disabledforeground", "bd",
                    "highlightcolor", "highlightbackground", "highlightthickness", "relief", "overrelief", "justify",
                    "indicatoron", "offrelief", "selectcolor"]
 
 
-class StyledScale(StyledMixin, tk.Scale):
+class Scale(StyleableMixin, tk.Scale):
     STYLED_OPTS = ["font", "bg", "activebackground", "fg", "bd", "showvalue", "sliderrelief", "troughcolor",
                    "highlightcolor", "highlightbackground", "highlightthickness", "relief"]
 
 
-class StyledScrollbar(StyledMixin, tk.Scrollbar):
+class Scrollbar(StyleableMixin, tk.Scrollbar):
     STYLED_OPTS = ["bg", "activebackground", "activerelief", "bd", "elementborderwidth", "troughcolor",
                    "highlightcolor", "highlightbackground", "highlightthickness", "relief"]
 
 
-class StyledSpinbox(StyledMixin, tk.Spinbox):
+class Spinbox(StyleableMixin, tk.Spinbox):
     STYLED_OPTS = ["font", "bg", "disabledbackground", "fg", "disabledforeground", "readonlybackground", "bd",
                    "highlightcolor", "highlightbackground", "highlightthickness", "relief", "justify",
                    "selectbackground", "selectborderwidth", "selectforeground", "buttonbackground",
                    "buttondownrelief", "buttonuprelief", "insertbackground", "insertborderwidth"]
 
 
-class StyledText(StyledMixin, tk.Text):
+class Text(StyleableMixin, tk.Text):
     STYLED_OPTS = ["font", "bg", "fg", "bd", "insertbackground", "insertborderwidth", "highlightcolor",
                    "highlightbackground", "highlightthickness", "relief", "selectbackground", "selectborderwidth",
                    "selectforeground"]
 
 
-class StyledToplevel(StyledMixin, tk.Toplevel):
+class Toplevel(StyleableMixin, tk.Toplevel):
     STYLED_OPTS = ["bg", "bd", "highlightcolor", "highlightbackground", "highlightthickness", "relief"]
 
 
-@contextmanager
-def stylize(root,
-            font_family=None,
-            font_size=None,
-            font_italic=None,
-            font_bold=None,
-            font_underline=None,
-            font_overstrike=None,
-            bg=None,
-            active_bg=None,
-            fg=None,
-            active_fg=None,
-            disabled_fg=None,
-            bd_width=None,
-            highlight_active_colour=None,
-            highlight_inactive_colour=None,
-            highlight_thickness=None,
-            relief=None,
-            justify=None,
-            **kwargs):
-    def add_style(d, key, val):
-        if val is not None:
-            d[key] = val
-        elif key in d:
-            del d[key]
+class Style:
 
-    global _style
-    new_style = _style[-1].copy() if _style else {}
+    DEFAULTS = {
+        "font": "FONT_NORMAL"
+    }
 
-    font_spec = new_style["font"].actual() if "font" in new_style else {}
-    add_style(font_spec, "family", font_family)
-    add_style(font_spec, "size", font_size)
-    add_style(font_spec, "underline", font_underline)
-    add_style(font_spec, "overstrike", font_overstrike)
-    add_style(font_spec, "slant", None if font_italic is None else (tkfont.ROMAN, tkfont.ITALIC)[font_italic])
-    add_style(font_spec, "weight", None if font_bold is None else (tkfont.NORMAL, tkfont.BOLD)[font_bold])
-    new_style["font"] = tkfont.Font(root, **font_spec)
+    def __init__(self, *parents, **kwargs):
+        self._dict = kwargs
+        self._styled = []
+        self._parents = parents
 
-    add_style(new_style, "bg", bg)
-    add_style(new_style, "activebackground", active_bg)
-    add_style(new_style, "fg", fg)
-    add_style(new_style, "activeforeground", active_fg)
-    add_style(new_style, "disabledforeground", disabled_fg)
-    add_style(new_style, "bd", bd_width)
-    add_style(new_style, "highlightcolor", highlight_active_colour)
-    add_style(new_style, "highlightbackground", highlight_inactive_colour)
-    add_style(new_style, "highlightthickness", highlight_thickness)
-    add_style(new_style, "relief", relief)
-    add_style(new_style, "justify", justify)
-    for k, v in kwargs.items():
-        add_style(new_style, k, v)
+    def register_styleable(self, styleable):
+        self._styled.append(styleable)
 
-    patch_changed = False
-    try:
-        if not _patched:
-            patch_changed = True
-            patch_tk_widgets()
-        _style.append(new_style)
-        yield new_style
-    finally:
-        if patch_changed:
-            unpatch_tk_widgets()
-        _style.pop()
+    def unregister_styleable(self, styleable):
+        self._styled.remove(styleable)
+
+    def configure(self, **kwargs):
+        self._dict.update(kwargs)
+        self._signal_style_changed()
+
+    config = configure
+
+    def _signal_style_changed(self):
+        for s in self._styled:
+            s.update_style()
+
+    def get_relevant_styles(self, widget):
+        return {k: v for k, v in map(lambda k: (k, self.get_style(k)), widget.keys()) if v is not None}
+
+    def get_style(self, key):
+        return self._get_style(key) or self.__class__.DEFAULTS.get(key)
+
+    def _get_style(self, key):
+        ret = self._dict.get(key)
+        if ret is None:
+            for p in self._parents:
+                ret = p._get_style(key)
+                if ret is not None:
+                    break
+        return ret
+
+    @classmethod
+    def set_defaults(cls, keep_existing=True, **defaults):
+        if keep_existing:
+            cls.DEFAULTS.update(defaults)
+        else:
+            cls.DEFAULTS = defaults
 
 
 def patch_tk_widgets():
-    global _patched
-    _patched = True
-    tk.Button = StyledButton
-    tk.Canvas = StyledCanvas
-    tk.Checkbutton = StyledCheckbutton
-    tk.Entry = StyledEntry
-    tk.Frame = StyledFrame
-    tk.Label = StyledLabel
-    tk.LabelFrame = StyledLabelFrame
-    tk.Listbox = StyledListbox
-    tk.Menu = StyledMenu
-    tk.PanedWindow = StyledPanedWindow
-    tk.Radiobutton = StyledRadiobutton
-    tk.Scale = StyledScale
-    tk.Scrollbar = StyledScrollbar
-    tk.Spinbox = StyledSpinbox
-    tk.Text = StyledText
-    tk.Toplevel = StyledToplevel
+    tk.Button = Button
+    tk.Canvas = Canvas
+    tk.Checkbutton = Checkbutton
+    tk.Entry = Entry
+    tk.Frame = Frame
+    tk.Label = Label
+    tk.LabelFrame = LabelFrame
+    tk.Listbox = Listbox
+    tk.Menu = Menu
+    tk.PanedWindow = PanedWindow
+    tk.Radiobutton = Radiobutton
+    tk.Scale = Scale
+    tk.Scrollbar = Scrollbar
+    tk.Spinbox = Spinbox
+    tk.Text = Text
+    tk.Toplevel = Toplevel
 
 
 def unpatch_tk_widgets():
-    global _patched
-    _patched = False
     tk.Button = _tkButton
     tk.Canvas = _tkCanvas
     tk.Checkbutton = _tkCheckbutton
@@ -273,3 +294,19 @@ def unpatch_tk_widgets():
     tk.Spinbox = _tkSpinbox
     tk.Text = _tkText
     tk.Toplevel = _tkToplevel
+
+
+@contextmanager
+def stylize(style, **overrides):
+    global _global_style
+    try:
+        _global_style = Style(style, **overrides) if overrides else style
+        yield
+    finally:
+        _global_style = None
+
+
+def init_fonts(root):
+    global FONT_TITLE, FONT_NORMAL
+    FONT_TITLE = tkfont.Font(root, name="FONT_TITLE", family="Courier New", size=10, weight=tkfont.BOLD)
+    FONT_NORMAL = tkfont.Font(root, name="FONT_NORMAL", family="Courier New", size=8)

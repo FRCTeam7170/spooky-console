@@ -1,11 +1,9 @@
 
-import tkinter as tk
-import tkinter.font as tkfont
+import spookyconsole.gui.style as style
+style.patch_tk_widgets()
+
 from spookyconsole.gui import core
-from spookyconsole.gui import plot
 from spookyconsole.gui import widgets
-from spookyconsole.test import TableSim
-from spookyconsole import utils
 import math
 
 
@@ -19,9 +17,6 @@ def clamping_tan(val, max_):
 
 
 gui = core.GuiManager("Plot Tests")
-font1 = tkfont.Font(gui.root, name="sc_title", family="Courier New", size=10, weight=tkfont.BOLD)
-font2 = tkfont.Font(gui.root, name="sc_normal", family="Courier New", size=8)
-# gui.root.option_add("*Font", font)
 win = gui.new_win()
 win.protocol("WM_DELETE_WINDOW", gui.root.destroy)
 win.init_grid(10, 10).set_resize_protocol(core.Grid.RESIZE_PROTO_EXPAND_CELLS)
