@@ -34,7 +34,7 @@ class NTStream:
     def write(self, data):
         if not self.writeable():
             raise ValueError("cannot write to a read-only stream")
-        if not isinstance(data, typing.Container):
+        if not isinstance(data, typing.Container) or isinstance(data, str):
             data = [data]
         self.flush()
         self.cache.extend(data)
@@ -58,6 +58,11 @@ class NTStream:
         if not self._output_blocked():
             self.t_set_func(list(self.cache))
             self.cache.clear()
+
+    def peek(self):
+        if not self.readable():
+            raise ValueError("cannot read a write-only stream")
+        return self.receiving_entry.value
 
     def new_data_listener(self, func, flags=NetworkTablesInstance.NotifyFlags.UPDATE):
         if not self.readable():

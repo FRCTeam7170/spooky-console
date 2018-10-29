@@ -6,10 +6,11 @@ TODO
 import tkinter as tk
 import math
 from collections import deque
+from spookyconsole import utils
 from spookyconsole.nt import ntutils
 from spookyconsole.gui.core import DockableMixin
-import spookyconsole.gui.style as style
-import spookyconsole.gui.popup as popup
+from spookyconsole.gui import style
+from spookyconsole.gui import popup
 
 
 class DockableButton(DockableMixin, style.Button):
@@ -288,6 +289,8 @@ class NTBrowser(style.Frame):
     TABLE_FORMAT = "[T] {}"
     ENTRY_FORMAT = "[E] {}"
     BLANK = "-"
+    INFO_DATA_WIDTH = 20
+    INFO_DATA_HEIGHT = 5
 
     def __init__(self, master, root_table,
                  scrollbar_style=None,
@@ -312,7 +315,7 @@ class NTBrowser(style.Frame):
         self._items = []
         self._curr_indices = None
         self._curr_scroll_row = 0
-        self._entry_popup = popup.PopupManager(self, title_fmt="Info: {}", style=def_style)
+        self._entry_popup = popup.PopupManager(self, title_fmt="Info: {}", style=def_style, resizeable=(True, True))
         self._header_style = header_style
         self._label_style = label_style
         self._button_style = button_style
@@ -332,7 +335,7 @@ class NTBrowser(style.Frame):
         self.insert_button = style.Button(self.lower_frame, style=button_style,
                                           command=self._insert_callback, text="Enter")
         self.reload_button = style.Button(self.lower_frame, style=button_style,
-                                          command=self._reload_entries(), text="Reload")
+                                          command=self.reload, text="Reload")
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -361,8 +364,14 @@ class NTBrowser(style.Frame):
 
         self._populate(self.root_table)
 
-    def _reload_entries(self):
+    def reload(self):
         self._populate(self.hierarchy[-1])
+
+    def reload_when_connected(self, inst, poll_ms=500):
+        if inst.isConnected():
+            self.reload()
+        else:
+            self.after(poll_ms, utils.named_partial(self.reload_when_connected, inst, poll_ms))
 
     def _merged_yview(self, *args):
         self._curr_scroll_row = round(float(args[1]) * len(self._items))
@@ -406,12 +415,12 @@ class NTBrowser(style.Frame):
         frame.grid_columnconfigure(1, weight=1)
         frame.grid_rowconfigure(1, weight=1)
 
-        style.Label(self, style=self._header_style, text="TYPE:").grid(row=0, column=0)
-        style.Label(self, style=self._label_style, text=ntutils.type_constant_to_str(entry.getType()))\
+        style.Label(frame, style=self._header_style, text="TYPE:").grid(row=0, column=0)
+        style.Label(frame, style=self._label_style, text=ntutils.type_constant_to_str(entry.getType()))\
             .grid(row=0, column=1)
 
-        style.Label(self, style=self._header_style, text="DATA:").grid(row=1, column=0)
-        data = style.Text(self, style=self._info_text_style)
+        style.Label(frame, style=self._header_style, text="DATA:").grid(row=1, column=0)
+        data = style.Text(frame, style=self._info_text_style, width=self.INFO_DATA_WIDTH, height=self.INFO_DATA_HEIGHT)
         data.insert(tk.END, str(entry.value))
         data.configure(state=tk.DISABLED)
         data.grid(row=1, column=1, sticky=tk.NSEW)
@@ -450,7 +459,7 @@ class NTBrowser(style.Frame):
             value = ntutils.type_cast(self.insert_entry.get(), self._items[self._curr_indices[0]].getType())
             for idx in self._curr_indices:
                 ntutils.set_entry_by_type(self._items[idx], value)
-            self._reload_entries()
+            self.reload()
         except ValueError as e:
             popup.dialog("Type Error", "Error: {}".format(str(e)), popup.BUTTONS_OK,
                          frame_style=self._style, message_style=self._label_style, button_style=self._button_style)
@@ -498,5 +507,4 @@ class DockableNTBrowser(DockableMixin, NTBrowser):
 # TODO: Camera?
 # TODO: start working on complementary code in spooky-lib
 # TODO: start writing actual click command code to interface with gui
-# TODO: work out gui serialization mechanism and specification
-# TODO: write networktables simulator?
+# TODO: analysis tools for recorded msgpack data

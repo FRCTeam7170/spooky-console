@@ -13,44 +13,53 @@ from spookyconsole.nt import stream as ntstream
 
 class Simulation:
 
-    DEFAULT_TABLE_NAME = "stuff"
+    # TODO: automatic listen/respond capabilities on streams
+
+    DEFAULT_TABLE_NAME = "/stuff"
 
     def __init__(self, port=NT_DEFAULT_PORT):
         self._port = port
         self._key_generator = count()
-        self._inst = NetworkTablesInstance.create()
-        self._inst.startServer(port=port)
+        self.inst = NetworkTablesInstance.create()
+        self.inst.startServer(port=port)
 
     @property
     def _default_table(self):
-        return self._inst.getTable(self.DEFAULT_TABLE_NAME)
+        return self.inst.getTable(self.DEFAULT_TABLE_NAME)
 
     def get_receiving_inst(self):
         inst = NetworkTablesInstance.create()
         inst.startClient(("localhost", self._port))
         return inst
 
-    def serve_boolean(self, table=None, key=None, value=None, interval=0):
-        return self._serve(table, key, value, interval, "setBoolean", self._rand_bool)
+    def serve_boolean(self, table=None, key=None, value=None,
+                      interval=0, listen=False):
+        return self._serve(table, key, value, interval, listen, "setBoolean",
+                           self._rand_bool)
 
-    def serve_double(self, table=None, key=None, value=None, lower=0, upper=10, interval=0):
-        return self._serve(table, key, value, interval, "setDouble",
+    def serve_double(self, table=None, key=None, value=None,
+                     lower=0, upper=10, interval=0, listen=False):
+        return self._serve(table, key, value, interval, listen, "setDouble",
                            partial(self._rand_double, lower, upper))
 
-    def serve_string(self, table=None, key=None, value=None, length=5, interval=0):
-        return self._serve(table, key, value, interval, "setString",
+    def serve_string(self, table=None, key=None, value=None,
+                     length=5, interval=0, listen=False):
+        return self._serve(table, key, value, interval, listen, "setString",
                            partial(self._rand_string, length))
 
-    def serve_boolean_array(self, table=None, key=None, value=None, length=10, interval=0):
-        return self._serve(table, key, value, interval, "setBooleanArray",
+    def serve_boolean_array(self, table=None, key=None, value=None,
+                            length=10, interval=0, listen=False):
+        return self._serve(table, key, value, interval, listen, "setBooleanArray",
                            partial(self._rand_bool_array, length))
 
-    def serve_double_array(self, table=None, key=None, value=None, length=10, lower=0, upper=10, interval=0):
-        return self._serve(table, key, value, interval, "setDoubleArray",
+    def serve_double_array(self, table=None, key=None, value=None,
+                           length=10, lower=0, upper=10, interval=0, listen=False):
+        return self._serve(table, key, value, interval, listen, "setDoubleArray",
                            partial(self._rand_double_array, length, lower, upper))
 
-    def serve_string_array(self, table=None, key=None, value=None, length=10, str_length=5, interval=0):
-        return self._serve(table, key, value, interval, "setStringArray",
+    def serve_string_array(self, table=None, key=None, value=None,
+                           length=10, str_length=5, interval=0, listen=False):
+        return self._serve(table, key, value, interval, listen, "setStringArray",
                            partial(self._rand_string_array, length, str_length))
 
     def serve_boolean_stream(self, table=None, receive=True, transmit=True, cache_size=100,
@@ -71,14 +80,16 @@ class Simulation:
                                   partial(self._rand_string_array, length, str_length),
                                   NetworkTablesInstance.EntryTypes.STRING)
 
-    def _serve(self, table, key, value, interval, set_func_name, data_func):
+    def _serve(self, table, key, value, interval, listen, set_func_name, data_func):
         entry = self._table(table).getEntry(self._key(key))
         set_func = getattr(entry, set_func_name)
         if interval:
             self._updater(interval, set_func, data_func)
         else:
             set_func(value or data_func())
-        return entry
+        if listen:
+            return entry, entry.addListener(self._listen_callback, NetworkTablesInstance.NotifyFlags.UPDATE)
+        return entry, None
 
     def _serve_stream(self, table, receive, transmit, cache_size, interval, data_func, kind):
         if not (receive or transmit):
@@ -102,11 +113,15 @@ class Simulation:
         if isinstance(table, NetworkTable):
             return table
         elif isinstance(table, str):
-            return self._inst.getTable(table)
+            return self.inst.getTable(table)
         return self._default_table
 
     def _key(self, key):
         return key or self._get_next_key()
+
+    @staticmethod
+    def _listen_callback(_, key, value, __):
+        print("{!r} updated: {}".format(key, value))
 
     @staticmethod
     def _updater(interval, set_func, data_func):
@@ -145,7 +160,8 @@ class Simulation:
 
 if __name__ == '__main__':
     sim = Simulation()
-    sim.serve_boolean()
-    sim.serve_double()
-    sim.serve_string()
-    input("Press any return to kill simulation...")
+    sim.serve_boolean(listen=True)
+    sim.serve_double(listen=True)
+    sim.serve_string(listen=True)
+    sim.serve_double_array("/stuff/othertable", listen=True)
+    input("Press return to kill simulation...\n")

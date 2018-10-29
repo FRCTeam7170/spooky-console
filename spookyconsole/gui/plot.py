@@ -17,7 +17,7 @@ import matplotlib.figure as mplfigure
 import matplotlib.animation as mplani
 import matplotlib as mpl
 from spookyconsole.gui.core import DockableMixin
-from spookyconsole import DATA_PATH
+from spookyconsole import RESOURCE_PATH
 
 
 MPL_STYLE = {}
@@ -163,7 +163,7 @@ class CustomTkNavBar(NavigationToolbar2Tk):
         super().__init__(*args, **kwargs)
 
     def _Button(self, text, file, command, extension='.png'):
-        path = os.path.join(DATA_PATH, "images", file + extension)
+        path = os.path.join(RESOURCE_PATH, "images", file + extension)
         image = ImageTk.PhotoImage(Image.open(path))
         b = style.Button(self, style=self.button_style, text=text, command=command, padx=2, pady=2, image=image)
         b._ntimage = image
