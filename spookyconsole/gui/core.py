@@ -14,7 +14,8 @@ Cell = namedtuple("Cell", ("column", "row"))
 GridGeometry = namedtuple("GridGeometry", ("width", "height",
                                            "cell_width", "cell_height",
                                            "column_padding", "row_padding"))
-VisualSpec = namedtuple("VisualSpec", ("bd_width", "bd_colour", "fill"))
+HighlightVisual = namedtuple("HighlightVisual", ("bd_width", "bd_colour", "fill"))
+GridVisual = namedtuple("GridVisual", ("width", "colour"))
 DockableEntry = namedtuple("DockableEntry", ("id", "cell"))
 Size = namedtuple("Size", ("width", "height"))
 Point = namedtuple("Point", ("x", "y"))
@@ -161,10 +162,6 @@ class Grid(ScrollCanvas):
     MIN_CELL_WIDTH = 25
     MIN_CELL_HEIGHT = 25
 
-    # Default visuals. TODO: change this
-    HIGHLIGHT_VISUAL_DEFAULT = VisualSpec(2, "#A00000", "#303030")
-    GRID_VISUAL_DEFAULT = VisualSpec(1, "#101010", "#808080")
-
     # Canvas tag constants.
     TAG_GRIDLINE = "gridline"
     TAG_HIGHLIGHT = "highlight"
@@ -181,8 +178,8 @@ class Grid(ScrollCanvas):
                  cell_width=50, cell_height=50,
                  column_padding=0, row_padding=0,
                  resize_protocol=RESIZE_PROTO_EXPAND_CELLS,
-                 highlight_visual=HIGHLIGHT_VISUAL_DEFAULT,
-                 grid_visual=GRID_VISUAL_DEFAULT,
+                 highlight_visual=HighlightVisual(2, style.GRAY_SCALE_2, style.GRAY_SCALE_4),
+                 grid_visual=GridVisual(1, style.GRAY_SCALE_0),
                  *args, **kwargs):
         """
         :param master: The master widget for the canvas.
@@ -245,10 +242,10 @@ class Grid(ScrollCanvas):
         """
 
         self.highlight_visual = highlight_visual
-        """The current ``VisualSpec`` for the highlighting effect."""
+        """The current ``HighlightVisual`` for the highlighting effect."""
 
         self.grid_visual = grid_visual
-        """The current ``VisualSpec`` for the grid drawn while a ``DockableMixin`` is dragged."""
+        """The current ``GridVisual`` for the grid drawn while a ``DockableMixin`` is dragged."""
 
         self.resize_protocol = None
         """
@@ -657,20 +654,18 @@ class Grid(ScrollCanvas):
         bd_width = bd_width or self.highlight_visual.bd_width
         bd_colour = bd_colour or self.highlight_visual.bd_colour
         fill = fill or self.highlight_visual.fill
-        self.highlight_visual = VisualSpec(bd_width, bd_colour, fill)
+        self.highlight_visual = HighlightVisual(bd_width, bd_colour, fill)
 
-    def set_grid_visual(self, bd_width=None, bd_colour=None, fill=None):
+    def set_grid_visual(self, width=None, colour=None):
         """
         Set one or more of the visual aspects of the grid effect.
 
-        :param bd_width: The new border width, or None for no change.
-        :param bd_colour: The new border colour, or None for no change.
-        :param fill: The new fill colour, or None for no change.
+        :param width: The new border width, or None for no change.
+        :param colour: The new border colour, or None for no change.
         """
-        bd_width = bd_width or self.grid_visual.bd_width
-        bd_colour = bd_colour or self.grid_visual.bd_colour
-        fill = fill or self.grid_visual.fill
-        self.grid_visual = VisualSpec(bd_width, bd_colour, fill)
+        width = width or self.grid_visual.width
+        colour = colour or self.grid_visual.colour
+        self.grid_visual = GridVisual(width, colour)
 
     def _draw_grid(self):
         """Draw the grid rectangles on the canvas. One rectangle is drawn for each cell."""
@@ -680,9 +675,9 @@ class Grid(ScrollCanvas):
         for x in range(0, self.geometry.width * dx, dx):
             for y in range(0, self.geometry.height * dy, dy):
                 self.create_rectangle(x, y, x + self.geometry.cell_width, y + self.geometry.cell_height,
-                                      width=self.grid_visual.bd_width,
-                                      outline=self.grid_visual.bd_colour,
-                                      fill=self.grid_visual.fill,
+                                      width=self.grid_visual.width,
+                                      outline=self.grid_visual.colour,
+                                      fill="",
                                       tag=self.TAG_GRIDLINE)
 
     def _clear_grid(self):
