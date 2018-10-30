@@ -84,12 +84,12 @@ class NTStream:
             self._listener_flags = 0
 
     def _check_listening_with_flags(self, flags):
-        merged = flags | self._listener_flags
-        if merged != self._listener_flags:
+        merged_flags = flags | self._listener_flags
+        if merged_flags != self._listener_flags:
             if self._listener_callback_id:
                 self.receiving_entry.removeListener(self._listener_callback_id)
-            self._listener_callback_id = self.receiving_entry.addListener(self._listener_callback, merged, False)
-            self._listener_flags = merged
+            self._listener_callback_id = self.receiving_entry.addListener(self._listener_callback, merged_flags, False)
+            self._listener_flags = merged_flags
 
     def _listener_callback(self, entry, key, value, flags):
         clear_after = False

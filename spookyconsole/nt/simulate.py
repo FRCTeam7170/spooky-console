@@ -13,8 +13,6 @@ from spookyconsole.nt import stream as ntstream
 
 class Simulation:
 
-    # TODO: automatic listen/respond capabilities on streams
-
     DEFAULT_TABLE_NAME = "/stuff"
 
     def __init__(self, port=NT_DEFAULT_PORT):
@@ -63,20 +61,20 @@ class Simulation:
                            partial(self._rand_string_array, length, str_length))
 
     def serve_boolean_stream(self, table=None, receive=True, transmit=True, cache_size=100,
-                             length=10, interval=1000):
-        return self._serve_stream(table, receive, transmit, cache_size, interval,
+                             length=10, transmit_type=0, listen=False):
+        return self._serve_stream(table, receive, transmit, cache_size, transmit_type, listen,
                                   partial(self._rand_bool_array, length),
                                   NetworkTablesInstance.EntryTypes.BOOLEAN)
 
     def serve_double_stream(self, table=None, receive=True, transmit=True, cache_size=100,
-                            length=10, lower=0, upper=10, interval=1000):
-        return self._serve_stream(table, receive, transmit, cache_size, interval,
+                            length=10, lower=0, upper=10, transmit_type=0, listen=False):
+        return self._serve_stream(table, receive, transmit, cache_size, transmit_type, listen,
                                   partial(self._rand_double_array, length, lower, upper),
                                   NetworkTablesInstance.EntryTypes.DOUBLE)
 
     def serve_string_stream(self, table=None, receive=True, transmit=True, cache_size=100,
-                            length=10, str_length=5, interval=1000):
-        return self._serve_stream(table, receive, transmit, cache_size, interval,
+                            length=10, str_length=5, transmit_type=0, listen=False):
+        return self._serve_stream(table, receive, transmit, cache_size, transmit_type, listen,
                                   partial(self._rand_string_array, length, str_length),
                                   NetworkTablesInstance.EntryTypes.STRING)
 
@@ -91,7 +89,7 @@ class Simulation:
             return entry, entry.addListener(self._listen_callback, NetworkTablesInstance.NotifyFlags.UPDATE)
         return entry, None
 
-    def _serve_stream(self, table, receive, transmit, cache_size, interval, data_func, kind):
+    def _serve_stream(self, table, receive, transmit, cache_size, transmit_type, listen, data_func, kind):
         if not (receive or transmit):
             raise ValueError("at least one of 'receive' or 'transmit' must be given")
         receive_entry, transmit_entry = None, None
@@ -102,8 +100,13 @@ class Simulation:
             key = transmit if isinstance(transmit, str) else None
             transmit_entry = self._table(table).getEntry(self._key(key))
         stream = ntstream.NTStream(kind, receive_entry, transmit_entry, cache_size)
-        if transmit:
-            self._updater(interval, stream.write, data_func)
+        if receive:
+            if transmit_type == -1:
+                stream.new_data_listener(partial(self._stream_responder_callback, stream, data_func))
+            elif listen:
+                stream.new_data_listener(self._listen_callback)
+        if transmit and transmit_type > 0:
+            self._updater(transmit_type, stream.write, data_func)
         return stream
 
     def _get_next_key(self):
@@ -121,7 +124,13 @@ class Simulation:
 
     @staticmethod
     def _listen_callback(_, key, value, __):
-        print("{!r} updated: {}".format(key, value))
+        print("{!r} updated: {!r}".format(key, value))
+
+    @staticmethod
+    def _stream_responder_callback(stream, data_func, _, key, value, __):
+        data = data_func()
+        print("{!r} updated: {!r}...Responding with {!r}".format(key, value, data))
+        stream.write(data)
 
     @staticmethod
     def _updater(interval, set_func, data_func):
