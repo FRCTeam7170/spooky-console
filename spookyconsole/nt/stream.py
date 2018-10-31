@@ -2,6 +2,7 @@
 from collections import deque, namedtuple
 import typing
 from networktables.instance import NetworkTablesInstance
+from ntcore.constants import NT_UNASSIGNED
 from spookyconsole.nt import ntutils
 
 
@@ -13,7 +14,7 @@ class NTStream:
     # TODO: send data in specific chunk sizes?
 
     def __init__(self, kind, receiving_entry=None, transmitting_entry=None, cache_size=100):
-        if not (receiving_entry or transmitting_entry):
+        if receiving_entry is None or transmitting_entry is None:
             raise ValueError("at least one entry must be given")
         self.r_set_func = None
         self.t_set_func = None
@@ -22,9 +23,9 @@ class NTStream:
         self._listener_callback_id = None
         self._listener_flags = 0
         self._listeners = []
-        if receiving_entry:
+        if receiving_entry is not None:
             self.r_set_func = self._check_entry_type(receiving_entry, kind)
-        if transmitting_entry:
+        if transmitting_entry is not None:
             self.t_set_func = self._check_entry_type(transmitting_entry, kind)
             self.cache = deque(maxlen=cache_size)
 
@@ -37,7 +38,7 @@ class NTStream:
         return ret
 
     def write(self, data):
-        self._assert_writeable("cannot write to a read-only stream")
+        # self._assert_writeable("cannot write to a read-only stream")
         if not isinstance(data, typing.Container) or isinstance(data, str):
             data = [data]
         self.flush()
@@ -111,21 +112,21 @@ class NTStream:
 
     @staticmethod
     def _check_entry_type(entry, kind):
-        entry_kind = entry.getType() if entry.exists() else None
+        entry_kind = entry.getType()
         if kind in (NetworkTablesInstance.EntryTypes.BOOLEAN, NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY):
-            if entry_kind and entry_kind != NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY:
+            if entry_kind not in (NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY, NT_UNASSIGNED):
                 NTStream._entry_type_error(entry_kind, kind)
             else:
                 entry.setBooleanArray([])
             return entry.setBooleanArray
         elif kind in (NetworkTablesInstance.EntryTypes.DOUBLE, NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY):
-            if entry_kind and entry_kind != NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY:
+            if entry_kind not in (NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY, NT_UNASSIGNED):
                 NTStream._entry_type_error(entry_kind, kind)
             else:
                 entry.setDoubleArray([])
             return entry.setDoubleArray
         else:  # kind in (NetworkTablesInstance.EntryTypes.STRING, NetworkTablesInstance.EntryTypes.STRING_ARRAY)
-            if entry_kind and entry_kind != NetworkTablesInstance.EntryTypes.STRING_ARRAY:
+            if entry_kind not in (NetworkTablesInstance.EntryTypes.STRING_ARRAY, NT_UNASSIGNED):
                 NTStream._entry_type_error(entry_kind, kind)
             else:
                 entry.setStringArray([])

@@ -135,9 +135,10 @@ class Simulation:
     @staticmethod
     def _updater(interval, set_func, data_func):
         def f():
-            set_func(data_func())
-            time.sleep(interval/1000)
-        threading.Thread(target=f).start()
+            while True:
+                set_func(data_func())
+                time.sleep(interval/1000)
+        threading.Thread(target=f, daemon=True).start()
 
     @staticmethod
     def _rand_bool():
@@ -173,4 +174,5 @@ if __name__ == '__main__':
     sim.serve_double(listen=True)
     sim.serve_string(listen=True)
     sim.serve_double_array("/stuff/othertable", listen=True)
+    sim.serve_string_stream("/stuff/othertable", transmit_type=-1)
     input("Press return to kill simulation...\n")
