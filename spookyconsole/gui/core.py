@@ -1026,8 +1026,21 @@ class Grid(ScrollCanvas):
 
 
 class Window(style.Toplevel):
+    """
+    A wrapper around a tkinter Toplevel. This class's main importance lies in the fact that it contains the ``Grid``
+    instance.
+    """
 
     def __init__(self, root, width, height, *args, **kwargs):
+        """
+        :param root: The parent tkinter widget for the Toplevel.
+        :param width: The width of the grid.
+        :type width: int
+        :param height: The height of the grid.
+        :type height: int
+        :param args: Additional args for the ``Grid`` constructor.
+        :param kwargs: Additional kwargs for the ``Grid`` constructor.
+        """
         super().__init__(root, style=kwargs.get("style"))
 
         self.grid = Grid(self, width, height, *args, **kwargs)
@@ -1035,10 +1048,37 @@ class Window(style.Toplevel):
 
 
 class DockableMixin:
+    """
+    A mixin class designed to be used with the tkinter widget classes.
+
+    This class provides all the foundation for a widget to become "dockable" on a ``Grid``. Namely, this classes binds
+    to the right click, right click release, and right click motion events as the means to drag each ``DockableMixin``
+    widget to snap to different locations on the grid. Therefore, subclasses mustn't also bind to the right click
+    events.
+
+    In the situation that a subclass is a container widget (e.g. a ``tkinter.Frame``) and it is desirable that specific
+    children "relay" right click events to the ``DockableMixin`` parent, the ``DockableMixin.bind_drag_on`` method is
+    provided to bind said specific widgets with appropriate right click events. Also, ``DockableMixin.unbind_drag_on``
+    is provided to remove any bindings on a particular widget which has been bound through
+    ``DockableMixin.bind_drag_on`` already.
+
+    If one wishes to programmatically (as opposed to through the gui) change a dockable's size or position, use the
+    ``DockableMixin.resize_dockable`` or ``DockableMixin.move_dockable`` methods, respectively.
+    """
 
     # TODO: Make dockables relay scroll events to grid
 
     def __init__(self, parent_grid, col_span, row_span, *args, **kwargs):
+        """
+        :param parent_grid: The tkinter parent for this widget. As the parameter name suggests, it should be a ``Grid``.
+        :type parent_grid: Grid
+        :param col_span: The column span (width) this dockable shall consume on its containing grid.
+        :type col_span: int
+        :param row_span: The row span (height) this dockable shall consume on its containing grid.
+        :type row_span: int
+        :param args: Args for the tkinter widget constructor.
+        :param kwargs: Kwargs for the tkinter widget constructor.
+        """
         super().__init__(parent_grid, *args, **kwargs)
 
         self.parent_grid = parent_grid
@@ -1047,52 +1087,116 @@ class DockableMixin:
 
         self.bind_drag_on(self)
 
-    def _on_drag_start(self, _):
-        self.parent_grid.signal_drag_start(self)
-
-    def _on_drag_stop(self, _):
-        self.parent_grid.signal_drag_stop()
-
-    def _on_drag_motion(self, _):
-        self.parent_grid.signal_drag_motion()
-
     def move_dockable(self, col, row):
+        """
+        Move this dockable to the given location. If moving the dockable to the specified location would result in a
+        grid conflict, the move will fail and no changes will be made.
+
+        :param col: The column to move the dockable to.
+        :type col: int
+        :param row: The row to move the dockable to.
+        :type row: int
+        :return: Whether or not the move was successful.
+        :rtype: bool
+        """
         return self.parent_grid.move_dockable(self, Cell(col, row))
 
     def resize_dockable(self, col_span=None, row_span=None):
+        """
+        Resize the dockable to the given column and row spans (i.e. width and height, respectively). If the resize would
+        result in a grid conflict with the dockable in its current location, the dockable will be moved to the nearest
+        location in which it can "fit". If such a location does not exist, the grid will be expanded as needed to
+        accommodate the dockable.
+
+        :param col_span: The new column span (width) of the dockable, or None for no change.
+        :type col_span: int
+        :param row_span: The new row span (height) of the dockable, or None for no change.
+        :type row_span: int
+        """
         self.col_span = col_span or self.col_span
         self.row_span = row_span or self.row_span
         self.parent_grid.dockable_resized(self)
 
     def bind_drag_on(self, widget):
-        widget.bind("<Button-3>", self._on_drag_start)
-        widget.bind("<ButtonRelease-3>", self._on_drag_stop)
-        widget.bind("<B3-Motion>", self._on_drag_motion)
+        """
+        Bind the three right click events associated with dragging dockables (click, release, and motion) to the given
+        widget.
+
+        :param widget: The widget to bind the right click events to.
+        """
+        # lambdas are used here to ignore the event objects passed by tkinter.
+        widget.bind("<Button-3>", lambda _: self.parent_grid.signal_drag_start(self))
+        widget.bind("<ButtonRelease-3>", lambda _: self.parent_grid.signal_drag_stop())
+        widget.bind("<B3-Motion>", lambda _: self.parent_grid.signal_drag_motion())
 
     @staticmethod
     def unbind_drag_on(widget):
+        """
+        Unbind the three right click events associated with dragging dockables (click, release, and motion) from the
+        given widget.
+
+        :param widget: The widget to unbind the right click events from.
+        """
         widget.unbind("<Button-3>")
         widget.unbind("<ButtonRelease-3>")
         widget.unbind("<B3-Motion>")
 
 
 class GuiManager:
+    """
+    Manages the tkinter root (``tkinter.Tk``) object and the creation and destruction of windows. This class also
+    provides an asynchronous version of the tkinter mainloop.
+    """
 
     def __init__(self, prog_name):
+        """
+        :param prog_name: The name to associate with the gui. This will be used in the title of all windows.
+        :type prog_name: str
+        """
         self.root = tk.Tk()
+        # Withdraw the root window from the screen, making it invisible.
         self.root.withdraw()
         self.prog_name = prog_name
+
         self.windows = {}
+        """
+        A dictionary associating an integer (key) to each window (value). This is the integer displayed in each window's
+        title.
+        """
 
     async def async_mainloop(self, interval):
+        """
+        An asynchronous version of the tkinter mainloop. This works by updating the tkinter root and then yielding
+        execution for the given interval.
+
+        If a ``tkinter.TclError`` occurs, it is printed out and the loop is broken.
+
+        :param interval: How long to sleep for (in milliseconds) in between updates.
+        :type interval: int
+        """
+        # Convert interval from milliseconds to seconds.
+        interval /= 1000
         try:
             while True:
                 self.root.update()
                 await asyncio.sleep(interval)
-        except tk.TclError:
-            print("Tkinter error occurred.")  # TODO: Temp?
+        except tk.TclError as e:
+            print("Tkinter error occurred:\n" + str(e))  # TODO: Temp?
 
     def new_win(self, width, height, *args, **kwargs):
+        """
+        Create and return a new ``Window``. The window is automatically given a title consisting of the
+        ``GuiManager.prog_name`` and its unique window number (integer), starting at one.
+
+        :param width: The width of the grid of the window.
+        :type width: int
+        :param height: The height of the grid of the window.
+        :type height: int
+        :param args: Additional args for the ``Window`` constructor.
+        :param kwargs: Additional kwargs for the ``Window`` constructor.
+        :return: The new window.
+        :rtype: Window
+        """
         win = Window(self.root, width, height, *args, **kwargs)
         num = self._get_next_win_num()
         win.title(self.prog_name + " ({})".format(num))
@@ -1100,7 +1204,22 @@ class GuiManager:
         return win
 
     def _get_next_win_num(self):
+        """
+        Generate a unique window number (integer), starting at one.
+
+        :return: The generated integer.
+        :rtype: int
+        """
         n = 1
         while n in self.windows:
             n += 1
         return n
+
+    def destroy_win(self, n):
+        """
+        Destroy the given window by its identifying number.
+
+        :param n: The to-be-destroyed window's number.
+        :type n: int
+        """
+        self.windows.pop(n).destroy()
