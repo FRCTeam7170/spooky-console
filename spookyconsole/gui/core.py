@@ -102,7 +102,7 @@ class ScrollCanvas(style.Canvas):
         self.x_scrollbar.grid(row=1, column=0, sticky=tk.EW)
         self.y_scrollbar.grid(row=0, column=1, sticky=tk.NS)
 
-        # Here we essentially make only the canvas grow in accordance with any new space.
+        # Here we essentially make only the canvas (not the scrollbars) grow in accordance with any new space.
         self.frame.grid_rowconfigure(0, weight=1)
         self.frame.grid_columnconfigure(0, weight=1)
 
@@ -116,6 +116,8 @@ class ScrollCanvas(style.Canvas):
         self._wheel_drag_delta_x = 0
         self._wheel_drag_delta_y = 0
 
+        # Bindings. Note that what tkinter considers mouse button 2 (the scroll click) is more typically called mouse
+        # button 3 (which is what I have been referring to it as).
         if bind_all:
             self.bind_all("<MouseWheel>", self._wheel_scroll)
             self.bind_all("<Button-2>", self._wheel_press)
@@ -137,33 +139,83 @@ class ScrollCanvas(style.Canvas):
         return "ScrollCanvas{}".format(id(self))
 
     def tag_widget(self, widget):
+        """
+        Add this ``ScrollCanvas``'s unique bind class to a tkinter widget so that said widget "relays" its mouse events
+        (namely, scrolling and panning with mouse button 3) to the canvas. This will have no effect if the canvas was
+        constructed with the ``bind_all`` flag, in which case the given widget should already "relay" its mouse events
+        to the canvas.
+
+        :param widget: The tkinter widget to add the tag to.
+        """
+        # widget.bindtags() with no argument returns the current bind tags.
         widget.bindtags((self.bind_class_name,) + widget.bindtags())
 
     def resize_scroll_region(self, width, height):
+        """
+        Convenience method for resizing the canvas's scroll region.
+
+        :param width: The new width in pixels.
+        :type width: int
+        :param height: The new height in pixels.
+        :type height: int
+        """
         self.configure(scrollregion=(0, 0, width, height))
 
     def _wheel_scroll(self, event):
-        if self.y_scrollbar.get() != self.MAX_SCROLLBAR_POS:
-            self.yview_scroll(-1 * int(event.delta * self.scroll_wheel_scale), tk.UNITS)
+        """
+        Internal method used as the callback for "<MouseWheel>" events.
+
+        :param event: The tkinter event object.
+        """
+        # if self.y_scrollbar.get() != self.MAX_SCROLLBAR_POS:
+        self.yview_scroll(-1 * int(event.delta * self.scroll_wheel_scale), tk.UNITS)
 
     def _wheel_press(self, event):
+        """
+        Internal method used as the callback for "<Button-2>" (scroll click) events.
+
+        :param event: The tkinter event object.
+        """
+        # Set the cursor. "fleur" is a 4-directional arrow typical to panning.
         self.configure(cursor="fleur")
+        # Record the starting mouse position of the pan. This is used to calculate how far from the mouse has moved from
+        # this starting position and ultimately has sensitive the panning should be.
         self._wheel_drag_start_pos = Point(event.x, event.y)
+        # Start the update view callback, which is called repeatedly while the mouse click is held.
         self._wheel_press_update_view()
 
     def _wheel_motion(self, event):
-        if self.x_scrollbar.get() != self.MAX_SCROLLBAR_POS:
-            self._wheel_drag_delta_x = event.x - self._wheel_drag_start_pos.x
-        if self.y_scrollbar.get() != self.MAX_SCROLLBAR_POS:
-            self._wheel_drag_delta_y = event.y - self._wheel_drag_start_pos.y
+        """
+        Internal method used as the callback for "<B2-Motion>" (scroll click motion) events.
+
+        :param event: The tkinter event object.
+        """
+        # if self.x_scrollbar.get() != self.MAX_SCROLLBAR_POS:
+        # Record the x distance moved from the starting position.
+        self._wheel_drag_delta_x = event.x - self._wheel_drag_start_pos.x
+        # if self.y_scrollbar.get() != self.MAX_SCROLLBAR_POS:
+        # Record the y distance moved from the starting position.
+        self._wheel_drag_delta_y = event.y - self._wheel_drag_start_pos.y
 
     def _wheel_release(self, _):
+        """Internal method used as the callback for "<ButtonRelease-2>" (scroll click release) events."""
+        # Reconfigure the mouse cursor to the standard arrow.
         self.configure(cursor="left_ptr")
+        # Reset all the state variables associated with panning. Note that setting the _wheel_drag_start_pos variable to
+        # None effectively cancels the view update callback since it uses whether that variable is set as an indicator
+        # for whether or not the user is panning.
         self._wheel_drag_start_pos = None
         self._wheel_drag_delta_x = 0
         self._wheel_drag_delta_y = 0
 
     def _wheel_press_update_view(self):
+        """
+        Internal method scheduled by itself with ``tkinter.Misc.after`` to repeatedly update the canvas's view. This
+        chained calling is initiated in ``ScrollCanvas._wheel_press`` and stops once ``ScrollCanvas._wheel_release``
+        unsets ``ScrollCanvas._wheel_drag_start_pos``.
+        """
+        # Notice the scroll speed is proportional to the how far the mouse has been moved from when the mouse scroll
+        # click started and to the appropriate scale factor.
         self.xview_scroll(int(self._wheel_drag_delta_x * self.scroll_press_scale_x), tk.UNITS)
         self.yview_scroll(int(self._wheel_drag_delta_y * self.scroll_press_scale_y), tk.UNITS)
         if self._wheel_drag_start_pos:
