@@ -23,6 +23,33 @@ BBox = namedtuple("BBox", ("x", "y", "w", "h"))
 
 
 class ScrollCanvas(style.Canvas):
+    """
+    A tkinter canvas with horizontal and vertical scrollbars.
+
+    Internally, a tkinter frame is used as the parent of the two scrollbars and the canvas, thus one mustn't attempt to
+    use any of the geometry managers on the ``ScrollCanvas`` object itself, but rather its ``frame`` attribute::
+
+        sc = ScrollCanvas(...)
+
+        sc.frame.grid(...)
+        # OR
+        sc.frame.pack(...)
+        # OR
+        sc.frame.place(...)
+        # BUT NOT
+        sc.grid(...)
+        # NOR
+        sc.pack(...)
+        # NOR
+        sc.place(...)
+
+    Note also that this class actually subclasses ``spookyconsole.gui.style.Canvas``, not the regular
+    ``tkinter.Canvas``, meaning the styling conveniences provided in ``spookyconsole.gui.style`` may be utilized.
+
+    This class handles binding both the scroll wheel movements (for vertical scrolling only) and mouse button 3 panning.
+    If this object is constructed without the ``bind_all`` flag, additional (child) widgets may be bound through
+    ``tag_widget`` so that they can accept mouse scroll/panning events and "relay" them to the canvas.
+    """
 
     MAX_SCROLLBAR_POS = (0, 1)
 
@@ -35,6 +62,32 @@ class ScrollCanvas(style.Canvas):
                  scrollbar_style=None,
                  frame_style=None,
                  *args, **kwargs):
+        """
+        :param master: The master tkinter widget for the frame containing the canvas and scrollbars.
+        :param width: The width of the scroll region in pixels.
+        :type width: int
+        :param height: The height of the scroll region in pixels.
+        :type height: int
+        :param bind_all: Whether or not to bind mouse events globally or only on a tkinter bind class.
+        :type bind_all: bool
+        :param scroll_wheel_scale: A multiplier for vertical scrolling using the mouse wheel.
+        :type scroll_wheel_scale: float
+        :param scroll_press_scale_x: A multiplier for the horizontal scrolling using the third mouse button.
+        :type scroll_press_scale_x: float
+        :param scroll_press_scale_y: A multiplier for the vertical scrolling using the third mouse button.
+        :type scroll_press_scale_y: float
+        :param scroll_press_delay: How often (in milliseconds) to update the view when scrolling using the third mouse
+        button.
+        :type scroll_press_delay: int
+        :param scrollbar_style: The style to apply to the x and y scrollbars. Defaults to the style given for the canvas
+        (in kwargs).
+        :type scrollbar_style: Style
+        :param frame_style: The style to apply to the frame. Defaults to the style given for the canvas (in kwargs).
+        :type frame_style: Style
+        :param args: Additional args for the canvas constructor.
+        :param kwargs: Additional kwargs for the canvas constructor.
+        """
+        # The default style to be used for the scrollbars and frame if they weren't given explicit styles.
         def_style = kwargs.get("style")
         scrollbar_style = scrollbar_style or def_style
         self.frame = style.Frame(master, style=(frame_style or def_style))
@@ -48,6 +101,8 @@ class ScrollCanvas(style.Canvas):
         self.grid(row=0, column=0, sticky=tk.NSEW)
         self.x_scrollbar.grid(row=1, column=0, sticky=tk.EW)
         self.y_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+
+        # Here we essentially make only the canvas grow in accordance with any new space.
         self.frame.grid_rowconfigure(0, weight=1)
         self.frame.grid_columnconfigure(0, weight=1)
 
@@ -55,6 +110,8 @@ class ScrollCanvas(style.Canvas):
         self.scroll_press_scale_x = scroll_press_scale_x
         self.scroll_press_scale_y = scroll_press_scale_y
         self.scroll_press_delay = scroll_press_delay
+
+        # Some state variables involved with the process of panning with mouse button 3.
         self._wheel_drag_start_pos = None
         self._wheel_drag_delta_x = 0
         self._wheel_drag_delta_y = 0
@@ -73,6 +130,10 @@ class ScrollCanvas(style.Canvas):
 
     @property
     def bind_class_name(self):
+        """
+        :return: A unique identifier to be used as a tkinter bind class.
+        :rtype: str
+        """
         return "ScrollCanvas{}".format(id(self))
 
     def tag_widget(self, widget):
@@ -110,45 +171,138 @@ class ScrollCanvas(style.Canvas):
 
 
 class GridState(np.ndarray):
+    """
+    A wrapper around a numpy array of booleans for storing the state of a ``Grid`` instance. That is, each element in
+    the ``GridState`` stores whether or not the corresponding grid cell is populated (i.e. contains part of a
+    ``DockableMixin`` widget).
+
+    A numpy array in particular is used for this purpose chiefly for the convenience provided by fancy indexing. This
+    makes checking for grid conflicts with a prospect dockable placement rather simple (and fast).
+    """
 
     def __new__(cls, width, height):
+        """
+        (Numpy does initialization in ``__new__``, not ``__init__``!)
+
+        :param width: The width of the grid to be represented by this array.
+        :type width: int
+        :param height: The height of the grid to be represented by this array.
+        :type height: int
+        :return: The new ``GridState`` object, initialized to all false values.
+        :rtype: GridState
+        """
         obj = super().__new__(cls, (height, width), dtype=bool)
         obj.fill(False)
         return obj
 
     @property
     def min_width(self):
+        """
+        :return: The minimum width the grid may be shrunk to before a dockable would be "clipped".
+        :rtype: int
+        """
         try:
+            # Sum the columns and find the maximum (i.e. last) index in which a column sums to zero (indicating no cells
+            # in that column are populated).
             return np.where(self.sum(axis=0) > 0)[0].max() + 1
         except ValueError:
             return 0
 
     @property
     def min_height(self):
+        """
+        :return: The minimum height the grid may be shrunk to before a dockable would be "clipped".
+        :rtype: int
+        """
         try:
+            # Sum the rows and find the maximum (i.e. last) index in which a row sums to zero (indicating no cells in
+            # that row are populated).
             return np.where(self.sum(axis=1) > 0)[0].max() + 1
         except ValueError:
             return 0
 
     def empty_copy(self):
+        """
+        :return: An empty copy (i.e. same size) of the grid.
+        :rtype: GridState
+        """
         return GridState(*self.shape)
 
     def conflicts(self, cell, col_span, row_span):
+        """
+        Determine whether a dockable with the given dimensions placed at the given cell would conflict with the current
+        grid state (i.e. one or more dockables would "overlap").
+
+        :param cell: The prospect top-left coordinate of the dockable.
+        :type cell: Cell
+        :param col_span: The column span of the dockable.
+        :type col_span: int
+        :param row_span: The row span of the dockable.
+        :type row_span: int
+        :return: Whether or not a conflict would occur.
+        :rtype: bool
+        """
         col, row = cell
         return self[row:row+row_span, col:col+col_span].any()
 
     def conflicts_where(self, cell, col_span, row_span):
+        """
+        Determine each location in which a dockable with the given dimensions placed at the given cell would conflict
+        with the current grid state (i.e. one or more dockables would "overlap") and return the result as a copy of this
+        grid state.
+
+        :param cell: The prospect top-left coordinate of the dockable.
+        :type cell: Cell
+        :param col_span: The column span of the dockable.
+        :type col_span: int
+        :param row_span: The row span of the dockable.
+        :type row_span: int
+        :return: A ``GridState`` object in which every conflict is represented by a true value in the corresponding
+        cell.
+        :rtype: GridState
+        """
         return self.empty_copy().populate(cell, col_span, row_span) & self
 
     def populate(self, cell, col_span, row_span):
+        """
+        "Populate" the grid state so as to a reflect a dockable with the given dimensions placed at the given cell. Note
+        that this method does not check for any grid conflicts beforehand; grid conflicts checks must be performed by
+        the caller.
+
+        :param cell: The top-left coordinate of the dockable.
+        :type cell: Cell
+        :param col_span: The column span of the dockable.
+        :type col_span: int
+        :param row_span: The row span of the dockable.
+        :type row_span: int
+        """
         self._set(cell, col_span, row_span, True)
-        return self
 
     def unpopulate(self, cell, col_span, row_span):
+        """
+        "Unpopulate" the grid state so as to a reflect a dockable with the given dimensions initially at the given cell
+        being removed.
+
+        :param cell: The top-left coordinate of the dockable.
+        :type cell: Cell
+        :param col_span: The column span of the dockable.
+        :type col_span: int
+        :param row_span: The row span of the dockable.
+        :type row_span: int
+        """
         self._set(cell, col_span, row_span, False)
-        return self
 
     def _set(self, cell, col_span, row_span, val):
+        """
+        Internal function to set a group of cells in the grid to the given value.
+
+        :param cell: The top-left coordinate of the cell group.
+        :type cell: Cell
+        :param col_span: The width of the dockable.
+        :type col_span: int
+        :param row_span: The height of the dockable.
+        :type row_span: int
+        """
         col, row = cell
         self[row:row+row_span, col:col+col_span] = val
 
@@ -197,9 +351,9 @@ class Grid(ScrollCanvas):
         :type row_padding: int
         :param resize_protocol: Initial protocol to employ when window size changes past scroll region.
         :param highlight_visual: Initial specification for how the highlight effect shall appear.
-        :type highlight_visual: VisualSpec
+        :type highlight_visual: HighlightVisual
         :param grid_visual: Initial specification for how the grid effect shall appear.
-        :type grid_visual: VisualSpec
+        :type grid_visual: GridVisual
         :param args: Extra args for the canvas constructor.
         :param kwargs: Extra kwargs for the canvas constructor.
         """
