@@ -361,7 +361,57 @@ class GridState(np.ndarray):
 
 class Grid(ScrollCanvas):
     """
-    TODO
+    The Grid class is a scrollable canvas with a draggable snapping/docking mechanism so that child widgets are forced
+    to a rigid grid layout all while permitting manual movement of the widgets at runtime. A canvas is used as the
+    parent widget since this allows the creation of special effects (discussed below) when any child widget is dragged.
+    Further, a canvas is a desirable parent widget because when inappropriately large child widgets are placed on a
+    canvas via ``tkinter.Canvas.create_window``, they are simply clipped as opposed to enlarging each column or row
+    which they occupy, which would contradict the grid's rigid layout philosophy.
+
+    The widgets that can be registered on the grid must be subclasses of ``DockableMixin`` (a single instance of which
+    is hereby to be interchangeably referred to simply as a "dockable"), a mixin class that provides the foundation for
+    the dragging mechanism (namely, dockables bind to right click events which are then relayed to this class). Each
+    dockable specifies a certain column and row span which determines how many grid "cells" it should consume in either
+    direction. These column and row spans are used along with the grid coordinate of the dockable's top-left cell to
+    describe its position and which cells on the grid it consumes. When dockables are first registered to the grid
+    (via ``Grid.register_dockable``), their initial position on the grid will be the cell nearest to the top-left corner
+    of the grid which can accommodate the dockable without resulting in a "grid conflict" (i.e. when two or more
+    dockables overlap on the grid). Afterwards, the position of the dockable can be changed manually through the gui or
+    programmatically through ``DockableMixin.move_dockable``. When dragging the dockable with the mouse, the nearest
+    valid (i.e. will not result in a grid conflict) grid cell is taken as the dockable's top-left coordinate. The size
+    of a dockable may also be programmatically changed via ``DockableMixin.resize_dockable``.
+
+    The ``GridState`` class is responsible for storing the current state of the grid (i.e. which cells are "populated"
+    by dockables and which are not). See ``GridState`` for information.
+
+    The geometry of the grid is defined by six values: width, height, cell width, cell height, column padding, and row
+    padding. All of these are stored in ``Grid.geometry``, an instance of the namedtuple ``GridGeometry``. They are all
+    settable via ``Grid.set_geometry``. ``width`` and ``height`` refer to the dimensions of the grid in cells;
+    ``cell_width`` and ``cell_height`` refer to the dimensions of each grid cell in pixels; ``column_padding`` and
+    ``row_padding`` refer to the spacing between grid cells in pixels. The space allocated to any given dockable is
+    determined by its column and row span and the grid's cell width and cell height; the grid's column or row padding
+    will also effect the dockable's allocated space if the dockable's column or row span are greater than one,
+    respectively. If a dockable is not allocated enough space, it will be clipped (as discussed above).
+
+    Whenever a dockable is manually dragged in the gui it is removed (un-drawn) from the screen and in its place a
+    "highlighting" rectangle, sized to the bounding box of the dockable, appears. This visual serves as the user's guide
+    for where the dockable would be placed if they were to stop dragging the dockable. Three parameters control the
+    appearance of this rectangle: border width and colour, and fill colour. They are stored in
+    ``Grid.highlight_visual``, an instance of the namedtuple ``HighlightVisual``. They are all settable via
+    ``Grid.set_highlight_visual``.
+
+    Another visual effect that occurs whenever a dockable is manually dragged in the gui are grid cell outlines. These
+    are rectangles that surround each cell of the grid, thereby serving as the user's guide for where each cell is
+    delimited. Two parameters control the appearance of these rectangles: border width and colour. They are stored in
+    ``Grid.grid_visual``, an instance of the namedtuple ``GridVisual``. They are all settable via
+    ``Grid.set_grid_visual``.
+
+    Whenever the window containing a grid is resized, two things may happen: (1) if the grid's scroll region is not
+    fully expanded, the grid's "viewport" (how much of the scroll region is visible at once) shrinks or expands as
+    appropriate; (2) if the grid's scroll region is fully expanded, the grid's "resize protocol" comes into effect. The
+    grid's resize protocol is stored in ``Grid.resize_protocol`` and settable through ``Grid.set_resize_protocol``.
+    The resize protocol determines how any new screen space allocated to the grid should be distributed among its child
+    widgets. See ``Grid.resize_protocol`` for more information.
     """
 
     # Some minimums regarding geometry.
