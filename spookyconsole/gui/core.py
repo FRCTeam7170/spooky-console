@@ -52,6 +52,10 @@ class ScrollCanvas(style.Canvas):
     """
 
     MAX_SCROLLBAR_POS = (0, 1)
+    """
+    This is the result of ``tkinter.Scrollbar.get`` whenever the scrollregion of the canvas is fully visible, and hence
+    the scrollbar cannot be moved.
+    """
 
     def __init__(self, master, width, height,
                  bind_all=False,
@@ -188,8 +192,10 @@ class ScrollCanvas(style.Canvas):
 
         :param event: The tkinter event object.
         """
-        # if self.y_scrollbar.get() != self.MAX_SCROLLBAR_POS:
-        self.yview_scroll(-1 * int(event.delta * self.scroll_wheel_scale), tk.UNITS)
+        # There's a weird situation where the user can scroll in the negative direction even when all of the
+        # scrollregion is visible; this conditional prevents that from happening.
+        if self.y_scrollbar.get() != self.MAX_SCROLLBAR_POS:
+            self.yview_scroll(-1 * int(event.delta * self.scroll_wheel_scale), tk.UNITS)
 
     def _wheel_press(self, event):
         """
@@ -211,12 +217,14 @@ class ScrollCanvas(style.Canvas):
 
         :param event: The tkinter event object.
         """
-        # if self.x_scrollbar.get() != self.MAX_SCROLLBAR_POS:
-        # Record the x distance moved from the starting position.
-        self._pan_delta_x = event.x - self._pan_start_pos.x
-        # if self.y_scrollbar.get() != self.MAX_SCROLLBAR_POS:
-        # Record the y distance moved from the starting position.
-        self._pan_delta_y = event.y - self._pan_start_pos.y
+        # There's a weird situation where the user can scroll in the negative direction even when all of the
+        # scrollregion is visible; the following two conditionals prevent that from happening.
+        if self.x_scrollbar.get() != self.MAX_SCROLLBAR_POS:
+            # Record the x distance moved from the starting position.
+            self._pan_delta_x = event.x - self._pan_start_pos.x
+        if self.y_scrollbar.get() != self.MAX_SCROLLBAR_POS:
+            # Record the y distance moved from the starting position.
+            self._pan_delta_y = event.y - self._pan_start_pos.y
 
     def _wheel_release(self, _):
         """Internal method used as the callback for "<ButtonRelease-2>" (scroll click release) events."""
@@ -435,21 +443,29 @@ class Grid(ScrollCanvas):
     widgets. See ``Grid.resize_protocol`` for more information.
     """
 
-    # Some minimums regarding geometry.
     MIN_CELL_WIDTH = 25
+    """The minimum width (in pixels) each grid cell can be."""
+
     MIN_CELL_HEIGHT = 25
+    """The minimum height (in pixels) each grid cell can be."""
 
-    # Canvas tag constants.
     TAG_GRIDLINE = "gridline"
+    """The tkinter canvas tag used for the grid rectangles."""
+
     TAG_HIGHLIGHT = "highlight"
+    """The tkinter canvas tag used for the highlight rectangle."""
 
-    # Grid resize protocols.
     RESIZE_PROTO_NONE = 0
-    RESIZE_PROTO_EXPAND_CELLS = 1
-    RESIZE_PROTO_ADD_PADDING = 2
+    """One of the resize protocols: Do nothing when the window is resized."""
 
-    # How frequently in milliseconds to update this grid's geometry when the window size is changed.
-    RESIZE_UPDATE_DELAY = 50  # ms
+    RESIZE_PROTO_EXPAND_CELLS = 1
+    """One of the resize protocols: Expand each cell equally to fit any new space when the window is resized."""
+
+    RESIZE_PROTO_ADD_PADDING = 2
+    """One of the resize protocols: Add padding equally in between each column or row when the window is resized."""
+
+    RESIZE_UPDATE_DELAY = 50
+    """How frequently in milliseconds to update this grid's geometry when the window size is changed."""
 
     def __init__(self, master, width, height,
                  cell_width=50, cell_height=50,
@@ -530,11 +546,9 @@ class Grid(ScrollCanvas):
         granted more space than required by its current scrollregion.
         
         May be one of the following:
-            - ``Grid.RESIZE_PROTO_NONE``: Do nothing when the window is resized.
-            - ``Grid.RESIZE_PROTO_EXPAND_CELLS``: Expand each cell equally to fit any new space when the window is\
-            resized.
-            - ``Grid.RESIZE_PROTO_ADD_PADDING``: Add padding equally in between each column or row when the window\
-            is resized.
+            - ``Grid.RESIZE_PROTO_NONE``
+            - ``Grid.RESIZE_PROTO_EXPAND_CELLS``
+            - ``Grid.RESIZE_PROTO_ADD_PADDING``
         
         """
 

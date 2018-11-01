@@ -525,13 +525,27 @@ class DockableGyro(DockableMixin, Gyro):
 
 
 class NTBrowser(style.Frame):
+    """
+    TODO
+    """
 
     PARENT_DIR = ".."
+    """How to represent the parent directory of a subtable."""
+
     TABLE_FORMAT = "[T] {}"
+    """Format string for tables in the ``NTBrowser.key_listbox`` listbox."""
+
     ENTRY_FORMAT = "[E] {}"
+    """Format string for entries in the ``NTBrowser.key_listbox`` listbox."""
+
     BLANK = "-"
+    """How to represent an invalid value (i.e. for a table) in the ``NTBrowser.value_listbox`` listbox."""
+
     INFO_DATA_WIDTH = 20
+    """The initial width in characters for the ``tkinter.Text`` widget in the entry info popups."""
+
     INFO_DATA_HEIGHT = 5
+    """The initial height in characters for the ``tkinter.Text`` widget in the entry info popups."""
 
     def __init__(self, master, root_table,
                  scrollbar_style=None,
@@ -542,6 +556,29 @@ class NTBrowser(style.Frame):
                  button_style=None,
                  info_text_style=None,
                  *args, **kwargs):
+        """
+        :param master: The master tkinter widget.
+        :param root_table: The top-level networktables table to model in this widget.
+        :type root_table: networktables.networktable.NetworkTable
+        :param scrollbar_style:  The style for the scrollbar. Defaults to the style given for the frame (in kwargs).
+        :type scrollbar_style: spookyconsole.gui.style.Style
+        :param listbox_style:  The style for the listboxes. Defaults to the style given for the frame (in kwargs).
+        :type listbox_style: spookyconsole.gui.style.Style
+        :param header_style: The style for the listbox headers. Defaults to the style given for the frame (in kwargs).
+        :type header_style: spookyconsole.gui.style.Style
+        :param label_style: The style for the entry label. Defaults to the style given for the frame (in kwargs).
+        :type label_style: spookyconsole.gui.style.Style
+        :param entry_style: The style for the entry. Defaults to the style given for the frame (in kwargs).
+        :type entry_style: spookyconsole.gui.style.Style
+        :param button_style: The style for the button. Defaults to the style given for the frame (in kwargs).
+        :type button_style: spookyconsole.gui.style.Style
+        :param info_text_style: The style for the info popup text widget. Defaults to the style given for the frame (in
+        kwargs).
+        :type info_text_style: spookyconsole.gui.style.Style
+        :param args: Additional args for the ``spookyconsole.gui.style.Frame`` constructor.
+        :param kwargs: Additional kwargs for the ``spookyconsole.gui.style.Frame`` constructor.
+        """
+        # Assure all the subwidget styles default to the frame style (which may itself be undefined).
         def_style = kwargs.get("style")
         scrollbar_style = scrollbar_style or def_style
         listbox_style = listbox_style or def_style
@@ -549,19 +586,40 @@ class NTBrowser(style.Frame):
         label_style = label_style or def_style
         entry_style = entry_style or def_style
         button_style = button_style or def_style
+
         super().__init__(master, *args, **kwargs)
+
         self.root_table = root_table
+        """The top-level ``networktables.networktable.NetworkTable`` to model in this widget."""
+
         self.hierarchy = deque((root_table,))
+        """
+        This holds the current path into the root table so we may navigate through the tables by appending and popping
+        to the end of the deque.
+        """
+
         self._last_table_idx = None
+        """"""
+
         self._items = []
+        """"""
+
         self._curr_indices = None
+        """"""
+
         self._curr_scroll_row = 0
+        """"""
+
         self._entry_popup = popup.PopupManager(self, title_fmt="Info: {}", style=def_style, resizeable=(True, True))
+        """"""
+
+        # Save only the subwidget styles that are accessed later as instance attributes.
         self._header_style = header_style
         self._label_style = label_style
         self._button_style = button_style
         self._info_text_style = info_text_style or def_style
 
+        # Construct the "upper" subwidgets.
         self.scrollbar = style.Scrollbar(self, style=scrollbar_style, command=self._merged_yview)
         self.key_label = style.Label(self, style=header_style, text="KEY")
         self.key_listbox = style.Listbox(self, style=listbox_style, selectmode=tk.EXTENDED,
@@ -570,6 +628,7 @@ class NTBrowser(style.Frame):
         self.value_listbox = style.Listbox(self, style=listbox_style, selectmode=tk.EXTENDED,
                                            yscrollcommand=self.scrollbar.set)
 
+        # Construct the "lower" subwidgets.
         self.lower_frame = style.Frame(self, style=def_style)
         self.insert_label = style.Label(self.lower_frame, style=label_style, text="INSERT:")
         self.insert_entry = style.Entry(self.lower_frame, style=entry_style, state=tk.DISABLED)
@@ -578,31 +637,41 @@ class NTBrowser(style.Frame):
         self.reload_button = style.Button(self.lower_frame, style=button_style,
                                           command=self.reload, text="Reload")
 
+        # Make only the listboxes resizeable, and make them equally resizeable.
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(1, weight=1)
+
+        # Make only the entry resizable in the lower frame.
         self.lower_frame.grid_columnconfigure(1, weight=1)
 
+        # Grid the "upper" subwidgets.
         self.key_label.grid(row=0, column=0, sticky=tk.NSEW)
         self.value_label.grid(row=0, column=1, sticky=tk.NSEW)
         self.key_listbox.grid(row=1, column=0, sticky=tk.NSEW)
         self.value_listbox.grid(row=1, column=1, sticky=tk.NSEW)
         self.scrollbar.grid(row=1, column=2, sticky=tk.NS)
 
+        # Grid the "lower" subwidgets.
         self.insert_label.grid(row=0, column=0, sticky=tk.NSEW)
         self.insert_entry.grid(row=0, column=1, sticky=tk.NSEW)
         self.insert_button.grid(row=0, column=2, sticky=tk.NSEW)
         self.reload_button.grid(row=0, column=3, sticky=tk.NSEW)
         self.lower_frame.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW)
 
+        # Bind scroll events on the listboxes.
         self.key_listbox.bind("<MouseWheel>", self._wheel_scroll)
         self.value_listbox.bind("<MouseWheel>", self._wheel_scroll)
+        # Bind double-click events on the listboxes.
         self.key_listbox.bind("<Double-Button-1>", self._key_double_click_callback)
         self.value_listbox.bind("<Double-Button-1>", self._value_double_click_callback)
+        # Bind select events on the listboxes.
         self.key_listbox.bind("<<ListboxSelect>>", self._listbox_select_callback)
         self.value_listbox.bind("<<ListboxSelect>>", self._listbox_select_callback)
+        # Bind the return key on the entry.
         self.insert_entry.bind("<Return>", self._insert_callback)
 
+        # Initialize the table by populating it with the root table.
         self._populate(self.root_table)
 
     def reload(self):
@@ -732,9 +801,11 @@ class NTBrowser(style.Frame):
 
 
 class DockableNTBrowser(DockableMixin, NTBrowser):
+    """Dockable version of ``NTBrowser``."""
 
     def __init__(self, master, table, width=5, height=5, *args, **kwargs):
         super().__init__(master, width, height, table, *args, **kwargs)
+        # Make each subwidget draggable.
         self.bind_drag_on(self.key_listbox)
         self.bind_drag_on(self.value_listbox)
         self.bind_drag_on(self.key_label)
@@ -750,3 +821,4 @@ class DockableNTBrowser(DockableMixin, NTBrowser):
 # TODO: start writing actual click command code to interface with gui
 # TODO: analysis tools for recorded msgpack data?
 # TODO: args coming after a long chain of pos args with default vals
+# TODO: make all types absolute in docstrings
