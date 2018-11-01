@@ -56,9 +56,9 @@ class ScrollCanvas(style.Canvas):
     def __init__(self, master, width, height,
                  bind_all=False,
                  scroll_wheel_scale=1/2,
-                 scroll_press_scale_x=1/2,
-                 scroll_press_scale_y=1/2,
-                 scroll_press_delay=50,
+                 pan_scale_x=1 / 2,
+                 pan_scale_y=1 / 2,
+                 pan_delay=50,
                  scrollbar_style=None,
                  frame_style=None,
                  *args, **kwargs):
@@ -72,13 +72,12 @@ class ScrollCanvas(style.Canvas):
         :type bind_all: bool
         :param scroll_wheel_scale: A multiplier for vertical scrolling using the mouse wheel.
         :type scroll_wheel_scale: float
-        :param scroll_press_scale_x: A multiplier for the horizontal scrolling using the third mouse button.
-        :type scroll_press_scale_x: float
-        :param scroll_press_scale_y: A multiplier for the vertical scrolling using the third mouse button.
-        :type scroll_press_scale_y: float
-        :param scroll_press_delay: How often (in milliseconds) to update the view when scrolling using the third mouse
-        button.
-        :type scroll_press_delay: int
+        :param pan_scale_x: A multiplier for the horizontal panning using the third mouse button.
+        :type pan_scale_x: float
+        :param pan_scale_y: A multiplier for the vertical panning using the third mouse button.
+        :type pan_scale_y: float
+        :param pan_delay: How often (in milliseconds) to update the view when panning using the third mouse button.
+        :type pan_delay: int
         :param scrollbar_style: The style to apply to the x and y scrollbars. Defaults to the style given for the canvas
         (in kwargs).
         :type scrollbar_style: Style
@@ -107,14 +106,36 @@ class ScrollCanvas(style.Canvas):
         self.frame.grid_columnconfigure(0, weight=1)
 
         self.scroll_wheel_scale = scroll_wheel_scale
-        self.scroll_press_scale_x = scroll_press_scale_x
-        self.scroll_press_scale_y = scroll_press_scale_y
-        self.scroll_press_delay = scroll_press_delay
+        """A multiplier for vertical scrolling using the mouse wheel."""
+
+        self.pan_scale_x = pan_scale_x
+        """A multiplier for the horizontal panning using the third mouse button."""
+
+        self.pan_scale_y = pan_scale_y
+        """A multiplier for the vertical panning using the third mouse button."""
+
+        self.pan_delay = pan_delay
+        """How often (in milliseconds) to update the view when panning using the third mouse button."""
 
         # Some state variables involved with the process of panning with mouse button 3.
-        self._wheel_drag_start_pos = None
-        self._wheel_drag_delta_x = 0
-        self._wheel_drag_delta_y = 0
+        self._pan_start_pos = None
+        """
+        Stores the mouse coordinates of where the user started panning so we may calculate how far away from this
+        central position the user has dragged the mouse. Whether or not this variable is set is used as an indicator for
+        whether ``ScrollCanvas._wheel_press_update_view`` should continue running.
+        """
+
+        self._pan_delta_x = 0
+        """
+        The change in x coordinate from the original x coordinate in ``ScrollCanvas._wheel_drag_start_pos``. This value
+        is proportional to how quickly panning happens in the horizontal direction.
+        """
+
+        self._pan_delta_y = 0
+        """
+        The change in y coordinate from the original y coordinate in ``ScrollCanvas._wheel_drag_start_pos``. This value
+        is proportional to how quickly panning happens in the vertical direction.
+        """
 
         # Bindings. Note that what tkinter considers mouse button 2 (the scroll click) is more typically called mouse
         # button 3 (which is what I have been referring to it as).
@@ -180,9 +201,9 @@ class ScrollCanvas(style.Canvas):
         self.configure(cursor="fleur")
         # Record the starting mouse position of the pan. This is used to calculate how far from the mouse has moved from
         # this starting position and ultimately has sensitive the panning should be.
-        self._wheel_drag_start_pos = Point(event.x, event.y)
+        self._pan_start_pos = Point(event.x, event.y)
         # Start the update view callback, which is called repeatedly while the mouse click is held.
-        self._wheel_press_update_view()
+        self._pan_update_view()
 
     def _wheel_motion(self, event):
         """
@@ -192,10 +213,10 @@ class ScrollCanvas(style.Canvas):
         """
         # if self.x_scrollbar.get() != self.MAX_SCROLLBAR_POS:
         # Record the x distance moved from the starting position.
-        self._wheel_drag_delta_x = event.x - self._wheel_drag_start_pos.x
+        self._pan_delta_x = event.x - self._pan_start_pos.x
         # if self.y_scrollbar.get() != self.MAX_SCROLLBAR_POS:
         # Record the y distance moved from the starting position.
-        self._wheel_drag_delta_y = event.y - self._wheel_drag_start_pos.y
+        self._pan_delta_y = event.y - self._pan_start_pos.y
 
     def _wheel_release(self, _):
         """Internal method used as the callback for "<ButtonRelease-2>" (scroll click release) events."""
@@ -204,11 +225,11 @@ class ScrollCanvas(style.Canvas):
         # Reset all the state variables associated with panning. Note that setting the _wheel_drag_start_pos variable to
         # None effectively cancels the view update callback since it uses whether that variable is set as an indicator
         # for whether or not the user is panning.
-        self._wheel_drag_start_pos = None
-        self._wheel_drag_delta_x = 0
-        self._wheel_drag_delta_y = 0
+        self._pan_start_pos = None
+        self._pan_delta_x = 0
+        self._pan_delta_y = 0
 
-    def _wheel_press_update_view(self):
+    def _pan_update_view(self):
         """
         Internal method scheduled by itself with ``tkinter.Misc.after`` to repeatedly update the canvas's view. This
         chained calling is initiated in ``ScrollCanvas._wheel_press`` and stops once ``ScrollCanvas._wheel_release``
@@ -216,10 +237,10 @@ class ScrollCanvas(style.Canvas):
         """
         # Notice the scroll speed is proportional to the how far the mouse has been moved from when the mouse scroll
         # click started and to the appropriate scale factor.
-        self.xview_scroll(int(self._wheel_drag_delta_x * self.scroll_press_scale_x), tk.UNITS)
-        self.yview_scroll(int(self._wheel_drag_delta_y * self.scroll_press_scale_y), tk.UNITS)
-        if self._wheel_drag_start_pos:
-            self.after(self.scroll_press_delay, self._wheel_press_update_view)
+        self.xview_scroll(int(self._pan_delta_x * self.pan_scale_x), tk.UNITS)
+        self.yview_scroll(int(self._pan_delta_y * self.pan_scale_y), tk.UNITS)
+        if self._pan_start_pos:
+            self.after(self.pan_delay, self._pan_update_view)
 
 
 class GridState(np.ndarray):
@@ -1132,8 +1153,13 @@ class DockableMixin:
         super().__init__(parent_grid, *args, **kwargs)
 
         self.parent_grid = parent_grid
+        """The grid containing this dockable."""
+
         self.col_span = col_span
+        """How many columns this dockable consumes on its parent grid."""
+
         self.row_span = row_span
+        """How many rows this dockable consumes on its parent grid."""
 
         self.bind_drag_on(self)
 
