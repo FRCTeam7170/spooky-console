@@ -63,7 +63,7 @@ block size will vary, but, in general, should be proportional to the rate of dat
 recommendation will help reduce the overhead delays inherent to networking and a potentially delayed response from the
 receiver.
 
-The sender will likely be required to employ a cache system to save any data generated while waiting for a responce from
+The sender will likely be required to employ a cache system to save any data generated while waiting for a response from
 the receiver. If the minimum send size recommendation is followed, such a cache system would also prove helpful in that
 data can be added to the cache until a minimum cache size is reached, at which point the entry can be set and the cache
 can be cleared.
