@@ -526,8 +526,42 @@ class DockableGyro(DockableMixin, Gyro):
 
 class NTBrowser(style.Frame):
     """
-    TODO
+    A widget for displaying the contents (both subtables and entries) of a ``networktables.networktable.NetworkTable``.
+    This widget is navigable, meaning subtables of the given "root table" (and subtables of those subtables, etcetera)
+    can be interactively explored.
+
+    This widget consists of two side-by-side ``tkinter.Listbox``s, one to display the name of a subtable or entry, and
+    the other to display the value corresponding to an entry (the value of a row in the listboxes representing a
+    subtable is simply filled in by ``NTBrowser.BLANK``). Both listbox columns are labeled and scrollable via a shared
+    scrollbar.
+
+    Below the listboxes lies an ``tkinter.entry`` (hereby to be refered to as a "tkentry" to avoid confusion) and an
+    "Enter" button. The tkentry can be used to set the value of a selected entry in the currently displayed table: once
+    the desired data is entered into the tkentry, the user must either click the "Enter" button or press <Return> on the
+    keyboard while the tkentry has keyboard focus to set the networktables entry. Whether it is the key or value listbox
+    that has the selection is irrelevant. Multiple entries can be set at the same time if they all have the same type by
+    selecting them using the <Shift> and <Ctrl> keys. If an invalid selection of listbox rows is encountered (e.g. if a
+    subtable is selected or if multiple entries with varying types are selected), the tkentry will be disabled. An error
+    popup window will appear if the given data string in the tkentry cannot be converted to the entry's type.
+
+    To navigate to a subtable, double-click it in the listboxes. The parent table of the currently displayed table can
+    be returned to by double clicking the top row in the listboxes, which is by default labelled ".." (although this can
+    be changed by setting ``NTBrowser.PARENT_DIR``).
+
+    Double-clicking on an entry in the listboxes will cause a resizable popup window to appear with the entry's type and
+    value in it. (This is mainly so that entries with long data strings can be viewed in full).
+
+    The subtables, entries, and entry values in the listboxes do not update automatically (except after one of the
+    entry's values is manually changed); the "Reload" button, which is beside the "Enter" button, must be clicked to
+    force a reload. The listboxes can also be updated programmatically using the ``NTBrowser.reload`` method.
+
+    If an ``NTBrowser`` is constructed while a ``networktables.instance.NetworkTablesInstance`` is suspected to be still
+    in the process of connecting, one might want to call ``NTBrowser.reload_when_connected`` after constructing the
+    ``NTBrowser`` object.
     """
+
+    # TODO: make text in labels controllable?
+    # TODO: have a label show the current path into the table
 
     PARENT_DIR = ".."
     """How to represent the parent directory of a subtable."""
@@ -599,19 +633,28 @@ class NTBrowser(style.Frame):
         """
 
         self._last_table_idx = None
-        """"""
+        """
+        Stores the index of the last subtable in the ``NTBrowser.value_listbox`` listbox (ALL the tables appear before
+        ALL the entries).
+        """
 
         self._items = []
-        """"""
+        """
+        Stores a list of the ``networktables.networktable.NetworkTable``s and ``networktables.entry.NetworkTableEntry``s
+        in the currently displayed (sub)table.
+        """
 
         self._curr_indices = None
-        """"""
+        """Stores the listbox indices currently selected by the user."""
 
         self._curr_scroll_row = 0
-        """"""
+        """
+        Stores the first visible listbox row. This attribute is made necessary by weird behaviour when using one
+        scrollbar to control two listboxes (see ``NTBrowser._wheel_scroll`` for more information).
+        """
 
         self._entry_popup = popup.PopupManager(self, title_fmt="Info: {}", style=def_style, resizeable=(True, True))
-        """"""
+        """The ``spookyconsole.gui.popup.PopupManager`` for the extra info window on networktables entries."""
 
         # Save only the subwidget styles that are accessed later as instance attributes.
         self._header_style = header_style
@@ -675,53 +718,105 @@ class NTBrowser(style.Frame):
         self._populate(self.root_table)
 
     def reload(self):
+        """Reload the data in the listboxes to reflect any changes on the networktables server."""
         self._populate(self.hierarchy[-1])
 
     def reload_when_connected(self, inst, poll_ms=500):
+        """
+        Wait until the given networktables instance successfully connects and then populate the listboxes with data.
+        This should be called after the ``NTBrowser`` is constructed if the networktables instance containing the root
+        table is suspected to be disconnected.
+
+        :param inst: The instance to check for connectivity on.
+        :type inst: networktables.instance.NetworkTablesInstance
+        :param poll_ms: How long to wait in between connectivity checks.
+        :type poll_ms: int
+        """
         if inst.isConnected():
             self.reload()
         else:
             self.after(poll_ms, utils.named_partial(self.reload_when_connected, inst, poll_ms))
 
     def _merged_yview(self, *args):
+        """A merged yview function for both listboxes so that they can both be controlled via a single scrollbar."""
         self._curr_scroll_row = round(float(args[1]) * len(self._items))
         self.key_listbox.yview(*args)
         self.value_listbox.yview(*args)
 
     def _wheel_scroll(self, event):
+        """
+        Internal method used as the callback for "<MouseWheel>" events.
+
+        :param event: The tkinter event object.
+        """
+        # For some unknown reason, when using a single scrollbar to control two listboxes they get out of sync by
+        # exactly four listbox rows, with the one being hovered over while scrolling being ahead of the other.
+        # Therefore, below we have some (seemingly) effective albeit strange logic to make sure both scrollbars stay in
+        # sync.
+
         lower_scroll, upper_scroll = self.scrollbar.get()
+        # Only make any changes to _curr_scroll_row if the given scroll event would actually make any change to the
+        # listboxs (i.e. if we're not at the top of the listboxes and scrolling up or at the bottom of the listboxes and
+        # scrolling down).
         if (lower_scroll != 0 and event.delta > 0) or (upper_scroll != 1 and event.delta < 0):
+            # Increment or decrement _curr_scroll_row according to the direction of the scroll event.
             self._curr_scroll_row += int(math.copysign(1, -event.delta))
+            # diff is the difference in rows between the "ahead" listbox and the "behind" one. It always (strangely) has
+            # magnitude 4.
             diff = int(math.copysign(4, -event.delta))
+            # Set the yviews of the listboxes, adding the difference to the correct one.
             self.key_listbox.yview(self._curr_scroll_row + (diff if self.key_listbox is not event.widget else 0))
             self.value_listbox.yview(self._curr_scroll_row + (diff if self.value_listbox is not event.widget else 0))
 
     def _key_double_click_callback(self, _):
+        """
+        Internal method used as the callback for "<Double-Button-1>" events on the ``NTBrowser.key_listbox`` listbox.
+        """
+        # Theoretically, it should be impossible to double click with more than one row selected, but just in case...
         if len(self._curr_indices) != 1:
             return  # TODO: Some sort of warning or error
         idx = self._curr_indices[0]
         if self.key_listbox.get(idx) == self.PARENT_DIR:
+            # If the selected row in the listbox was the parent table, pop the current table from the hierarchy and
+            # populate the listboxes with the parent directory.
             self.hierarchy.pop()
             self._populate(self.hierarchy[-1])
         elif idx <= self._last_table_idx:
+            # If the selected row in the listbox is a subtable of the current table, add it to the hierarchy and
+            # populate the listboxes with that table.
             table = self._items[idx]
             self.hierarchy.append(table)
             self._populate(table)
         else:
+            # Otherwise, the selected row in the listbox must be an entry, so display the entry info popup window.
             self._create_entry_popup(idx)
 
     def _value_double_click_callback(self, _):
+        """
+        Internal method used as the callback for "<Double-Button-1>" events on the ``NTBrowser.value_listbox`` listbox.
+        """
+        # Theoretically, it should be impossible to double click with more than one row selected, but just in case...
         if len(self._curr_indices) != 1:
             return  # TODO: Some sort of warning or error
         idx = self._curr_indices[0]
+        # If the selected row corresponds to the value of a table (which is nonsense), do nothing.
         if idx <= self._last_table_idx:
             return  # TODO: Some sort of warning or error
+        # Otherwise, the selected row in the listbox must be an entry, so display the entry info popup window.
         self._create_entry_popup(idx)
 
     def _create_entry_popup(self, idx):
+        """
+        Create a popup window displaying the type and value of the entry corresponding to the given index.
+
+        :param idx: The index in the ``NTBrowser._items`` list for the entry to display in the popup window.
+        :type idx: int
+        """
         entry = self._items[idx]
 
         frame = style.Frame(self._entry_popup, style=self._style)
+
+        # Make only the Text widget (which holds the entry's value) resizeable.
         frame.grid_columnconfigure(1, weight=1)
         frame.grid_rowconfigure(1, weight=1)
 
@@ -732,69 +827,115 @@ class NTBrowser(style.Frame):
         style.Label(frame, style=self._header_style, text="DATA:").grid(row=1, column=0)
         data = style.Text(frame, style=self._info_text_style, width=self.INFO_DATA_WIDTH, height=self.INFO_DATA_HEIGHT)
         data.insert(tk.END, str(entry.value))
+        # Disable the text widget so it cannot be edited.
         data.configure(state=tk.DISABLED)
         data.grid(row=1, column=1, sticky=tk.NSEW)
 
+        # Forcefully close an already-open popup window, should one exists.
         if self._entry_popup.popup_open:
             self._entry_popup.close_current_popup()
+
+        # Create the popup window with the entry's name as the title of the window.
         self._entry_popup.create(frame, entry.getName())
 
     def _populate(self, table):
+        """
+        Populate the listboxes with subtables, entries, and entry values from the given table. If the given table is not
+        the root table, the parent table is added first. Secondly, all the subtables of the given table are added.
+        Finally, all the entries in the given table are added.
+
+        :param table: The networktable to populate the listboxes with.
+        :type table: networktables.networktable.NetworkTable
+        """
+        # Repopulating the listboxes will reset the scroll...
         self._curr_scroll_row = 0
+        # Repopulating the listboxes will reset the selection, so make sure the entry defaults to disabled.
         self._disable_entry()
         self._clear()
+        # Initialize the _last_table_idx to -1 because the listbox rows are zero-indexed and each table added to the
+        # listboxes will increment _last_table_idx.
         self._last_table_idx = -1
+        # Add a parent table row to the listboxes if the given table is not the root table.
         if table is not self.root_table:
-            self._append_pair(self.PARENT_DIR, self.BLANK, None)
+            self._append_row(self.PARENT_DIR, self.BLANK, None)
             self._last_table_idx += 1
+        # Iterate through the given table's subtables and add each one to the listboxes.
         for subtable in table.getSubTables():
-            self._append_pair(self.TABLE_FORMAT.format(subtable), self.BLANK, table.getSubTable(subtable))
+            self._append_row(self.TABLE_FORMAT.format(subtable), self.BLANK, table.getSubTable(subtable))
             self._last_table_idx += 1
+        # Iterate through the given table's entries and add each one to the listboxes.
         for key in table.getKeys():
             entry = table.getEntry(key)
-            self._append_pair(self.ENTRY_FORMAT.format(key), str(entry.value), entry)
+            self._append_row(self.ENTRY_FORMAT.format(key), str(entry.value), entry)
 
-    def _append_pair(self, key, value, item):
+    def _append_row(self, key, value, item):
+        """
+        Add the given key and value to the listboxes and add the given networktables table or entry to the
+        ``NTBrowser._items`` list.
+
+        :param key: The key of the table or entry.
+        :type key: str
+        :param value: The value of the entry or the ``NTBrowser.BLANK`` filler string for tables.
+        :type value: str
+        :param item: The table or entry corresponding to the given key and value.
+        """
         self._items.append(item)
         self.key_listbox.insert(tk.END, key)
         self.value_listbox.insert(tk.END, value)
 
     def _clear(self):
+        """Clear both listboxes and the items list."""
         self._items = []
         self.key_listbox.delete(0, tk.END)
         self.value_listbox.delete(0, tk.END)
 
     def _insert_callback(self, _=None):
+        """
+        Internal method used as the callback for "<Return>" events on the ``NTBrowser.insert_entry`` and command on the
+        ``NTBrowser.insert_button``. This sets the value on the selected entries to whatever is in the tkinter entry.
+        """
         try:
             value = ntutils.type_cast(self.insert_entry.get(), self._items[self._curr_indices[0]].getType())
             for idx in self._curr_indices:
                 ntutils.set_entry_by_type(self._items[idx], value)
+            # Reload when done to assure the new data appears in the listboxes.
             self.reload()
         except ValueError as e:
+            # If an error occurred while trying to cast the given string to the type expected by the selected entries,
+            # create a popup window indicating the user of the error.
             popup.dialog("Type Error", "Error: {}".format(str(e)), popup.BUTTONS_OK,
                          frame_style=self._style, message_style=self._label_style, button_style=self._button_style)
 
     def _disable_entry(self):
+        """Clear the entry and disable the entry and button, making them unable to be interacted with."""
         self.insert_entry.delete(0, tk.END)
         self.insert_entry.configure(state=tk.DISABLED)
         self.insert_button.configure(state=tk.DISABLED)
 
     def _enable_entry(self):
+        """Enable the entry and button, allowing them to be interacted with."""
         self.insert_entry.configure(state=tk.NORMAL)
         self.insert_button.configure(state=tk.NORMAL)
 
     def _listbox_select_callback(self, _):
+        """
+        Internal method used as the callback for "<<ListboxSelect>>" events on the listboxes. This method enables or
+        disabled the entry as appropriate to the new data selection and sets ``NTBrowser._curr_indices``.
+        """
         self._curr_indices = self.key_listbox.curselection() or self.value_listbox.curselection()
         if self._curr_indices:
             kind = None
             for idx in self._curr_indices:
+                # Break if any one of the selected rows is a table.
                 if idx <= self._last_table_idx:
                     break
                 if kind is None:
                     kind = self._items[idx].getType()
+                # If any two entries in the selection disagree in type, break.
                 elif self._items[idx].getType() != kind:
                     break
             else:
+                # Only enable the entry if the for loop wasn't broken out of.
                 self._enable_entry()
                 return
         self._disable_entry()
