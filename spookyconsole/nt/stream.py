@@ -1,4 +1,8 @@
 
+"""
+TODO
+"""
+
 from collections import deque, namedtuple
 import typing
 from networktables.instance import NetworkTablesInstance
@@ -10,6 +14,9 @@ Listener = namedtuple("Listener", ("callback", "flags", "peek_only"))
 
 
 class NTStream:
+    """
+    TODO
+    """
 
     # TODO: send data in specific chunk sizes?
 
