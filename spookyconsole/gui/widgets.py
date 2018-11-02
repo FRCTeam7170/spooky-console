@@ -351,7 +351,9 @@ class DockableLabelledTextBank(DockableMixin, LabelledTextBank):
 
 class Gyro(style.Canvas):
     """
-    A simple gyroscope widget drawn on a canvas. The gyroscope consists of a circle
+    A simple gyroscope widget drawn on a canvas. The gyroscope consists of a circle and a pointer. The pointer is
+    updated automatically as the angle of the gyroscope is set. If ``auto_resize`` is set in the constructor, the circle
+    and pointer will automatically resize as the gyro is allocated more or less screen space.
     """
 
     # TODO: add label with degrees
