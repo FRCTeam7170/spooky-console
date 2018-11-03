@@ -1,8 +1,4 @@
 
-"""
-TODO
-"""
-
 import random
 import string
 from itertools import count
