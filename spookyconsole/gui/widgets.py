@@ -15,50 +15,62 @@ from spookyconsole.gui import popup
 
 
 class DockableButton(DockableMixin, style.Button):
+    """Dockable version of ``spookyconsole.gui.style.Button``."""
     pass
 
 
 class DockableCanvas(DockableMixin, style.Canvas):
+    """Dockable version of ``spookyconsole.gui.style.Canvas``."""
     pass
 
 
 class DockableCheckbutton(DockableMixin, style.Checkbutton):
+    """Dockable version of ``spookyconsole.gui.style.Checkbutton``."""
     pass
 
 
 class DockableEntry(DockableMixin, style.Entry):
+    """Dockable version of ``spookyconsole.gui.style.Entry``."""
     pass
 
 
 class DockableFrame(DockableMixin, style.Frame):
+    """Dockable version of ``spookyconsole.gui.style.Frame``."""
     pass
 
 
 class DockableLabel(DockableMixin, style.Label):
+    """Dockable version of ``spookyconsole.gui.style.Label``."""
     pass
 
 
 class DockableLabelFrame(DockableMixin, style.LabelFrame):
+    """Dockable version of ``spookyconsole.gui.style.LabelFrame``."""
     pass
 
 
 class DockableListbox(DockableMixin, style.Listbox):
+    """Dockable version of ``spookyconsole.gui.style.Listbox``."""
     pass
 
 
 class DockableRadiobutton(DockableMixin, style.Radiobutton):
+    """Dockable version of ``spookyconsole.gui.style.Radiobutton``."""
     pass
 
 
 class DockableScale(DockableMixin, style.Scale):
+    """Dockable version of ``spookyconsole.gui.style.Scale``."""
     pass
 
 
 class DockableSpinbox(DockableMixin, style.Spinbox):
+    """Dockable version of ``spookyconsole.gui.style.Spinbox``."""
     pass
 
 
 class DockableText(DockableMixin, style.Text):
+    """Dockable version of ``spookyconsole.gui.style.Text``."""
     pass
 
 
@@ -145,6 +157,7 @@ class BooleanIndicator(style.Frame):
 
 
 class DockableBooleanIndicator(DockableMixin, BooleanIndicator):
+    """Dockable version of ``BooleanIndicator``."""
 
     def __init__(self, master, width=1, height=1, *args, **kwargs):
         """
@@ -228,6 +241,7 @@ class LabelledText(style.Frame):
 
 
 class DockableLabelledText(DockableMixin, LabelledText):
+    """Dockable version of ``LabelledText``."""
 
     def __init__(self, master, title, text="", width=1, height=1, *args, **kwargs):
         super().__init__(master, width, height, title, text, *args, **kwargs)
@@ -291,12 +305,14 @@ class BankBase(style.Frame):
 
 
 class BooleanIndicatorBank(BankBase):
+    """Bank version of ``BooleanIndicator``."""
 
     def __init__(self, master, *args, **kwargs):
         super().__init__(master, BooleanIndicator, *args, **kwargs)
 
 
 class DockableBooleanIndicatorBank(DockableMixin, BooleanIndicatorBank):
+    """Dockable version of ``BooleanIndicatorBank``."""
 
     def __init__(self, master, width=2, height=3, *args, **kwargs):
         super().__init__(master, width, height, *args, **kwargs)
@@ -311,6 +327,7 @@ class DockableBooleanIndicatorBank(DockableMixin, BooleanIndicatorBank):
 
 
 class LabelledTextBank(BankBase):
+    """Bank version of ``LabelledText``."""
 
     def __init__(self, master, *args, **kwargs):
         super().__init__(master, LabelledText, *args, **kwargs)
@@ -324,6 +341,7 @@ class LabelledTextBank(BankBase):
 
 
 class DockableLabelledTextBank(DockableMixin, LabelledTextBank):
+    """Dockable version of ``LabelledTextBank``."""
 
     def __init__(self, master, width=2, height=3, *args, **kwargs):
         super().__init__(master, width, height, *args, **kwargs)
@@ -511,6 +529,7 @@ class Gyro(style.Canvas):
 
 
 class DockableGyro(DockableMixin, Gyro):
+    """Dockable version of ``Gyro``."""
     pass
 
 
@@ -919,6 +938,7 @@ class NTBrowser(style.Frame):
 
 
 class DockableNTBrowser(DockableMixin, NTBrowser):
+    """Dockable version of ``NTBrowser``."""
 
     def __init__(self, master, table, width=5, height=5, *args, **kwargs):
         super().__init__(master, width, height, table, *args, **kwargs)
