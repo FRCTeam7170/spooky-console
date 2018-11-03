@@ -82,8 +82,8 @@ class BooleanIndicator(style.Frame):
         :type off_colour: str
         :param label_style: The style for the label. Defaults to the style given for the frame (in kwargs).
         :type label_style: spookyconsole.gui.style.Style
-        :param args: Additional args for the ``style.Frame`` constructor.
-        :param kwargs: Additional kwargs for the ``style.Frame`` constructor.
+        :param args: Additional args for the ``spookyconsole.gui.style.Frame`` constructor.
+        :param kwargs: Additional kwargs for the ``spookyconsole.gui.style.Frame`` constructor.
         """
         super().__init__(master, *args, **kwargs)
         self.on_colour = on_colour
@@ -176,8 +176,8 @@ class LabelledText(style.Frame):
         :type title_style: spookyconsole.gui.style.Style
         :param text_style: The style for the text label. Defaults to the style given for the frame (in kwargs).
         :type text_style: spookyconsole.gui.style.Style
-        :param args: Additional args for the ``style.Frame`` constructor.
-        :param kwargs: Additional kwargs for the ``style.Frame`` constructor.
+        :param args: Additional args for the ``spookyconsole.gui.style.Frame`` constructor.
+        :param kwargs: Additional kwargs for the ``spookyconsole.gui.style.Frame`` constructor.
         """
         def_style = kwargs.get("style")
         super().__init__(master, *args, **kwargs)
@@ -242,8 +242,8 @@ class BankBase(style.Frame):
         :param widget_cls: The class to use for each bank item.
         :param pack_opts: Options to use when packing each bank item.
         :type pack_opts: dict
-        :param args: Additional args for the ``style.Frame`` constructor.
-        :param kwargs: Additional kwargs for the ``style.Frame`` constructor.
+        :param args: Additional args for the ``spookyconsole.gui.style.Frame`` constructor.
+        :param kwargs: Additional kwargs for the ``spookyconsole.gui.style.Frame`` constructor.
         """
         super().__init__(master, *args, **kwargs)
 
@@ -361,8 +361,8 @@ class Gyro(style.Canvas):
         :type circ_opts: dict
         :param pointer_opts: Visual options to use when creating the pointer via ``tkinter.Canvas.create_line``.
         :type pointer_opts: dict
-        :param args: Additional args for the ``style.Canvas`` constructor.
-        :param kwargs: Additional kwargs for the ``style.Canvas`` constructor.
+        :param args: Additional args for the ``spookyconsole.gui.style.Canvas`` constructor.
+        :param kwargs: Additional kwargs for the ``spookyconsole.gui.style.Canvas`` constructor.
         """
         super().__init__(master, *args, **kwargs)
 

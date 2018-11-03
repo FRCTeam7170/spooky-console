@@ -84,13 +84,13 @@ class ScrollCanvas(style.Canvas):
         :type pan_delay: int
         :param scrollbar_style: The style to apply to the x and y scrollbars. Defaults to the style given for the canvas
         (in kwargs).
-        :type scrollbar_style: Style
+        :type scrollbar_style: spookyconsole.gui.style.Style
         :param frame_style: The style to apply to the frame. Defaults to the style given for the canvas (in kwargs).
-        :type frame_style: Style
-        :param args: Additional args for the canvas constructor.
-        :param kwargs: Additional kwargs for the canvas constructor.
+        :type frame_style: spookyconsole.gui.style.Style
+        :param args: Additional args for the ``spookyconsole.gui.style.Canvas`` constructor.
+        :param kwargs: Additional kwargs for the ``spookyconsole.gui.style.Canvas`` constructor.
         """
-        # The default style to be used for the scrollbars and frame if they weren't given explicit styles.
+        # The default style to be used for the scrollbars and frame if they weren't explicitly given styles.
         def_style = kwargs.get("style")
         scrollbar_style = scrollbar_style or def_style
         self.frame = style.Frame(master, style=(frame_style or def_style))
@@ -105,7 +105,7 @@ class ScrollCanvas(style.Canvas):
         self.x_scrollbar.grid(row=1, column=0, sticky=tk.EW)
         self.y_scrollbar.grid(row=0, column=1, sticky=tk.NS)
 
-        # Here we essentially make only the canvas (not the scrollbars) grow in accordance with any new space.
+        # Make only the canvas (not the scrollbars) grow in accordance with any new space.
         self.frame.grid_rowconfigure(0, weight=1)
         self.frame.grid_columnconfigure(0, weight=1)
 
@@ -121,7 +121,6 @@ class ScrollCanvas(style.Canvas):
         self.pan_delay = pan_delay
         """How often (in milliseconds) to update the view when panning using the third mouse button."""
 
-        # Some state variables involved with the process of panning with mouse button 3.
         self._pan_start_pos = None
         """
         Stores the mouse coordinates of where the user started panning so we may calculate how far away from this
@@ -205,10 +204,10 @@ class ScrollCanvas(style.Canvas):
         """
         # Set the cursor. "fleur" is a 4-directional arrow typical to panning.
         self.configure(cursor="fleur")
-        # Record the starting mouse position of the pan. This is used to calculate how far from the mouse has moved from
-        # this starting position and ultimately has sensitive the panning should be.
+        # Record the starting mouse position of the pan. This is used to calculate how far the mouse has moved from this
+        # starting position and ultimately has sensitive the panning should be.
         self._pan_start_pos = Point(event.x, event.y)
-        # Start the update view callback, which is called repeatedly while the mouse click is held.
+        # Start the update view callback chain, which is called repeatedly while mouse button 3 is held.
         self._pan_update_view()
 
     def _wheel_motion(self, event):
@@ -379,10 +378,12 @@ class GridState(np.ndarray):
 
         :param cell: The top-left coordinate of the cell group.
         :type cell: Cell
-        :param col_span: The width of the dockable.
+        :param col_span: The width of the cell group.
         :type col_span: int
-        :param row_span: The height of the dockable.
+        :param row_span: The height of the cell group.
         :type row_span: int
+        :param val: The value to set the cell group to.
+        :type val: bool
         """
         col, row = cell
         self[row:row+row_span, col:col+col_span] = val
@@ -442,6 +443,7 @@ class Grid(ScrollCanvas):
     The resize protocol determines how any new screen space allocated to the grid should be distributed among its child
     widgets. See ``Grid.resize_protocol`` for more information.
     """
+    # TODO: Some weird stuff could happen if a dockable is added programmatically while dragging is in process.
 
     MIN_CELL_WIDTH = 25
     """The minimum width (in pixels) each grid cell can be."""
@@ -489,12 +491,13 @@ class Grid(ScrollCanvas):
         :param row_padding: Initial padding between rows in the grid.
         :type row_padding: int
         :param resize_protocol: Initial protocol to employ when window size changes past scroll region.
+        :type resize_protocol: int
         :param highlight_visual: Initial specification for how the highlight effect shall appear.
         :type highlight_visual: HighlightVisual
         :param grid_visual: Initial specification for how the grid effect shall appear.
         :type grid_visual: GridVisual
-        :param args: Extra args for the canvas constructor.
-        :param kwargs: Extra kwargs for the canvas constructor.
+        :param args: Extra args for the ``ScrollCanvas`` constructor.
+        :param kwargs: Extra kwargs for the ``ScrollCanvas`` constructor.
         """
         super().__init__(master,
                          width * (cell_width + column_padding),
@@ -701,7 +704,7 @@ class Grid(ScrollCanvas):
         """
         Search the grid around ``origin_cell`` for a rectangular group of cells with dimensions ``col_span`` (width) by
         ``row_span`` (height) and return the top-left cell. The group of cells nearest to ``origin_cell`` is returned,
-        where nearest is defined as the smallest sum of positive column offset and positive row offset from
+        where nearest is defined as the smallest sum of absolute column offset and absolute row offset from
         ``origin_cell``.
 
         :param origin_cell: The cell to search around.
@@ -757,12 +760,14 @@ class Grid(ScrollCanvas):
             self._curr_cell = None
         else:
             # If the user released the drag in a invalid position, revert to the dockable's old position.
+            # TODO: This case is now obsolete with the changes made to signal_drag_motion.
             self._place_dockable(self._curr_dockable, self._curr_dockable_orig_cell)
         self._curr_dockable = None
         self._curr_dockable_orig_cell = None
 
     def signal_drag_motion(self):
         """Called by a ``DockableMixin`` widget currently being dragged to signal that the mouse has moved."""
+        # TODO: This method needn't be called from DockableMixin any more; we can bind to it in signal_drag_start.
         self._clear_highlight()
         self._curr_cell = None
 
@@ -825,7 +830,7 @@ class Grid(ScrollCanvas):
         height of the grid state (``GridState.min_width`` and ``GridState.min_height``).
 
         To check if any of the requested new dimensions have been denied, consult the returned ``GridGeometry`` object,
-        which contains the geometries actually deployed.
+        which contains the geometries actually employed.
 
         :param width: The new width of the grid, or None for no change.
         :type width: int
@@ -847,7 +852,7 @@ class Grid(ScrollCanvas):
         if cell_width or cell_height or column_padding or row_padding:
             invalid_dockable_geom = True
 
-        # Boolean to indicate if the grid state must be reconsidered.
+        # Boolean to indicate if the grid state must be recalculated.
         invalid_state_size = False
         if width or height:
             invalid_state_size = True
@@ -865,7 +870,7 @@ class Grid(ScrollCanvas):
         cell_width = self._clamp(cell_width or self.geometry.cell_width, self.MIN_CELL_WIDTH)
         cell_height = self._clamp(cell_height or self.geometry.cell_height, self.MIN_CELL_HEIGHT)
 
-        # Notice the none checks instead of simply "or": the paddings are allow to be zero.
+        # Notice the None checks instead of simply "or": the paddings are allow to be zero.
         column_padding = self.geometry.column_padding if column_padding is None else column_padding
         row_padding = self.geometry.row_padding if row_padding is None else row_padding
 
@@ -917,20 +922,21 @@ class Grid(ScrollCanvas):
         Set the resize protocol (``Grid.resize_protocol``) to the given one.
 
         :param protocol: The resize protocol to employ.
+        :type protocol: int
         """
         self.resize_protocol = protocol
         self.geometry = self.orig_geometry
-        if self.resize_protocol == self.RESIZE_PROTO_NONE:
+        if protocol == self.RESIZE_PROTO_NONE:
             self.unbind("<Configure>")
-            if self._resize_after_id:
+            if self._resize_data:
                 # Cancel a resize callback, should one exist, since the changed resize_protocol would mess it up.
                 self.after_cancel(self._resize_after_id)
                 self._resize_after_id = None
-            # Update the dockable geometry in case the protocol was change while the window is expanded.
+            # Update the dockable geometry in case the protocol was changed while the window is expanded.
             self._update_dockable_geometry()
         else:
             self.bind("<Configure>", self._resize_bind_callback)
-            # Simulate a resize callback once in case the protocol was change while the window is expanded.
+            # Simulate a resize callback once in case the protocol was changed while the window is expanded.
             self._resize_data = Size(self.winfo_width(), self.winfo_height())
             self._resize_after_callback()
 
@@ -939,8 +945,11 @@ class Grid(ScrollCanvas):
         Set one or more of the visual aspects of the highlighting effect.
 
         :param bd_width: The new border width, or None for no change.
+        :type bd_width: int
         :param bd_colour: The new border colour, or None for no change.
+        :type bd_colour: str
         :param fill: The new fill colour, or None for no change.
+        :type fill: str
         """
         bd_width = bd_width or self.highlight_visual.bd_width
         bd_colour = bd_colour or self.highlight_visual.bd_colour
@@ -952,7 +961,9 @@ class Grid(ScrollCanvas):
         Set one or more of the visual aspects of the grid effect.
 
         :param width: The new border width, or None for no change.
+        :type width: int
         :param colour: The new border colour, or None for no change.
+        :type colour: str
         """
         width = width or self.grid_visual.width
         colour = colour or self.grid_visual.colour
@@ -961,7 +972,9 @@ class Grid(ScrollCanvas):
     def _draw_grid(self):
         """Draw the grid rectangles on the canvas. One rectangle is drawn for each cell."""
         # TODO: The grid rectangles needn't be redrawn every time; they could be cached and invalidated when geometry is reset.
+        # The number of pixels between each cell in the x direction.
         dx = self.geometry.cell_width + self.geometry.column_padding
+        # The number of pixels between each cell in the y direction.
         dy = self.geometry.cell_height + self.geometry.row_padding
         for x in range(0, self.geometry.width * dx, dx):
             for y in range(0, self.geometry.height * dy, dy):
@@ -1062,6 +1075,7 @@ class Grid(ScrollCanvas):
     def _should_resize_x(self):
         """
         :return: Whether the grid should be resized in the x direction in accordance with the window size.
+        :rtype: bool
         """
         # The x scroll bar will be maxed out if the space allocated to the grid is greater than the width of the
         # scrollregion, and hence this may be used as an indicator for when the grid should be resized in the x
@@ -1071,6 +1085,7 @@ class Grid(ScrollCanvas):
     def _should_resize_y(self):
         """
         :return: Whether the grid should be resized in the y direction in accordance with the window size.
+        :rtype: bool
         """
         # The y scroll bar will be maxed out if the space allocated to the grid is greater than the height of the
         # scrollregion, and hence this may be used as an indicator for when the grid should be resized in the y
@@ -1155,7 +1170,7 @@ class DockableMixin:
 
     def __init__(self, parent_grid, col_span, row_span, *args, **kwargs):
         """
-        :param parent_grid: The tkinter parent for this widget. As the parameter name suggests, it should be a ``Grid``.
+        :param parent_grid: The tkinter parent for this widget. It should be a ``Grid``.
         :type parent_grid: Grid
         :param col_span: The column span (width) this dockable shall consume on its containing grid.
         :type col_span: int
@@ -1244,7 +1259,8 @@ class GuiManager:
         :type prog_name: str
         """
         self.root = tk.Tk()
-        # Withdraw the root window from the screen, making it invisible.
+        # Withdraw the root window from the screen, making it invisible, since we never actually use the root window for
+        # anything.
         self.root.withdraw()
         self.prog_name = prog_name
 
