@@ -14,7 +14,13 @@ from spookyconsole import DATA_PATH
 
 class NTSerializer:
     """
-    TODO
+    Class to serialize data to a given file, typically from a ``networktables.entry.NetworkTableEntry`` or
+    ``spookyconsole.nt.stream.NTStream``, using MessagePack. New data is added to a cache and serialized and written to
+    disk if and only if the length of the cache is of a given minimum size (for performance concerns).
+
+    ``NTSerializer.new_data`` can be used to manually add data to be serialized or the two factory class methods
+    ``NTSerializer.from_entry`` and ``NTSerializer.from_stream`` can be used to automatically bind listeners to the
+    given entry/stream and serialize data as it comes available.
     """
 
     DATETIME_PREFIX_FMT = "%d-%m-%Y-%H-%M_"
