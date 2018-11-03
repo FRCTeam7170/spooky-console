@@ -244,6 +244,19 @@ class DockableLabelledText(DockableMixin, LabelledText):
     """Dockable version of ``LabelledText``."""
 
     def __init__(self, master, title, text="", width=1, height=1, *args, **kwargs):
+        """
+        :param master: The master tkinter widget.
+        :param title: The title of the data.
+        :type title: str
+        :param text: The initial text for the widget.
+        :type text: str
+        :param width: The width (column span) of this widget on the grid.
+        :type width: int
+        :param height: The height (row span) of this widget on the grid.
+        :type height: int
+        :param args: Additional args for the ``LabelledText`` constructor.
+        :param kwargs: Additional kwargs for the ``LabelledText`` constructor.
+        """
         super().__init__(master, width, height, title, text, *args, **kwargs)
         # Relay drag events on the labels to the DockableMixin.
         self.bind_drag_on(self.text_label)
@@ -308,6 +321,11 @@ class BooleanIndicatorBank(BankBase):
     """Bank version of ``BooleanIndicator``."""
 
     def __init__(self, master, *args, **kwargs):
+        """
+        :param master: The master tkinter widget.
+        :param args: Additional args for the ``BankBase`` constructor.
+        :param kwargs: Additional kwargs for the ``BankBase`` constructor.
+        """
         super().__init__(master, BooleanIndicator, *args, **kwargs)
 
 
@@ -315,6 +333,15 @@ class DockableBooleanIndicatorBank(DockableMixin, BooleanIndicatorBank):
     """Dockable version of ``BooleanIndicatorBank``."""
 
     def __init__(self, master, width=2, height=3, *args, **kwargs):
+        """
+        :param master: The master tkinter widget.
+        :param width: The width (column span) of this widget on the grid.
+        :type width: int
+        :param height: The height (row span) of this widget on the grid.
+        :type height: int
+        :param args: Additional args for the ``BooleanIndicatorBank`` constructor.
+        :param kwargs: Additional kwargs for the ``BooleanIndicatorBank`` constructor.
+        """
         super().__init__(master, width, height, *args, **kwargs)
 
     def add(self, *args, **kwargs):
@@ -330,6 +357,11 @@ class LabelledTextBank(BankBase):
     """Bank version of ``LabelledText``."""
 
     def __init__(self, master, *args, **kwargs):
+        """
+        :param master: The master tkinter widget.
+        :param args: Additional args for the ``BankBase`` constructor.
+        :param kwargs: Additional kwargs for the ``BankBase`` constructor.
+        """
         super().__init__(master, LabelledText, *args, **kwargs)
 
     def add(self, *args, **kwargs):
@@ -344,6 +376,15 @@ class DockableLabelledTextBank(DockableMixin, LabelledTextBank):
     """Dockable version of ``LabelledTextBank``."""
 
     def __init__(self, master, width=2, height=3, *args, **kwargs):
+        """
+        :param master: The master tkinter widget.
+        :param width: The width (column span) of this widget on the grid.
+        :type width: int
+        :param height: The height (row span) of this widget on the grid.
+        :type height: int
+        :param args: Additional args for the ``LabelledTextBank`` constructor.
+        :param kwargs: Additional kwargs for the ``LabelledTextBank`` constructor.
+        """
         super().__init__(master, width, height, *args, **kwargs)
 
     def add(self, *args, **kwargs):
@@ -940,8 +981,19 @@ class NTBrowser(style.Frame):
 class DockableNTBrowser(DockableMixin, NTBrowser):
     """Dockable version of ``NTBrowser``."""
 
-    def __init__(self, master, table, width=5, height=5, *args, **kwargs):
-        super().__init__(master, width, height, table, *args, **kwargs)
+    def __init__(self, master, root_table, width=5, height=5, *args, **kwargs):
+        """
+        :param master: The master tkinter widget.
+        :param root_table: The top-level networktables table to model in this widget.
+        :type root_table: networktables.networktable.NetworkTable
+        :param width: The width (column span) of this widget on the grid.
+        :type width: int
+        :param height: The height (row span) of this widget on the grid.
+        :type height: int
+        :param args: Additional args for the ``NTBrowser`` constructor.
+        :param kwargs: Additional kwargs for the ``NTBrowser`` constructor.
+        """
+        super().__init__(master, width, height, root_table, *args, **kwargs)
         # Make each subwidget draggable.
         self.bind_drag_on(self.key_listbox)
         self.bind_drag_on(self.value_listbox)
