@@ -1021,7 +1021,6 @@ class Grid(ScrollCanvas):
 
         :param event: The tk event object.
         """
-        # TODO: Turn this caching functionality into a decorator so it may be reused?
         # Only schedule a callback if one isn't already scheduled (_resize_data is None when no callback is scheduled.)
         if not self._resize_data:
             self._resize_after_id = self.after(self.RESIZE_UPDATE_DELAY, self._resize_after_callback)
@@ -1165,7 +1164,6 @@ class DockableMixin:
     If one wishes to programmatically (as opposed to through the gui) change a dockable's size or position, use the
     ``DockableMixin.resize_dockable`` or ``DockableMixin.move_dockable`` methods, respectively.
     """
-
     # TODO: Make dockables relay scroll events to grid
 
     def __init__(self, parent_grid, col_span, row_span, *args, **kwargs):
@@ -1259,10 +1257,14 @@ class GuiManager:
         :type prog_name: str
         """
         self.root = tk.Tk()
+        """The root tkinter widget."""
+
         # Withdraw the root window from the screen, making it invisible, since we never actually use the root window for
         # anything.
         self.root.withdraw()
+
         self.prog_name = prog_name
+        """The name associated with the gui. This is used in the title of all windows."""
 
         self.windows = {}
         """

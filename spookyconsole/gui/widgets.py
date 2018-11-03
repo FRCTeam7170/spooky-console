@@ -87,7 +87,10 @@ class BooleanIndicator(style.Frame):
         """
         super().__init__(master, *args, **kwargs)
         self.on_colour = on_colour
+        """The colour the indicator takes on when enabled."""
+
         self.off_colour = off_colour
+        """The colour the indicator takes on when disabled."""
 
         # Make the label resizable.
         self.grid_columnconfigure(0, weight=1)
@@ -340,7 +343,6 @@ class Gyro(style.Canvas):
     updated automatically as the angle of the gyroscope is set. If ``auto_resize`` is set in the constructor, the circle
     and pointer will automatically resize as the gyro is allocated more or less screen space.
     """
-
     # TODO: add label with degrees
     # TODO: style options for canvas items
 
@@ -547,7 +549,6 @@ class NTBrowser(style.Frame):
     in the process of connecting, one might want to call ``NTBrowser.reload_when_connected`` after constructing the
     ``NTBrowser`` object.
     """
-
     # TODO: make text in labels controllable?
     # TODO: have a label show the current path into the table
 
