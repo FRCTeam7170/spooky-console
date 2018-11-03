@@ -26,10 +26,7 @@ class NTSerializer:
     def new_data(self, data):
         if not isinstance(data, typing.Container) or isinstance(data, str):
             data = [data]
-        if self._cache:
-            self._cache.extend(data)
-        else:
-            self._cache = data
+        self._cache.extend(data)
         if len(self._cache) >= self._cache_size:
             self._flush()
 
@@ -43,7 +40,7 @@ class NTSerializer:
             self._already_written = True
         with open(self._path, "wb") as file:
             msgpack.pack(list(read) + self._cache, file)
-        self._cache = []
+        self._cache.clear()
 
     def _on_new_data(self, _, __, value, ___):
         self.new_data(value)

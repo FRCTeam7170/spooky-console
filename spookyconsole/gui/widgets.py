@@ -64,9 +64,8 @@ class DockableText(DockableMixin, style.Text):
 
 class BooleanIndicator(style.Frame):
     """
-    A rectangular widget for displaying a boolean value indicated by two different colours. The indicator may or may not
-    have a label on it. Also, the indicator can optionally be "mutable", meaning it can be clicked by the user to toggle
-    it.
+    A rectangular widget for displaying a boolean value indicated by two different colours. The indicator may have a
+    label on it. Also, the indicator can optionally be "mutable", meaning it can be clicked by the user to toggle it.
     """
 
     def __init__(self, master, text="", mutable=True, on_colour="green", off_colour="red",
@@ -82,7 +81,7 @@ class BooleanIndicator(style.Frame):
         :param off_colour: The colour the indicator will take on when disabled.
         :type off_colour: str
         :param label_style: The style for the label. Defaults to the style given for the frame (in kwargs).
-        :type label_style: Style
+        :type label_style: spookyconsole.gui.style.Style
         :param args: Additional args for the ``style.Frame`` constructor.
         :param kwargs: Additional kwargs for the ``style.Frame`` constructor.
         """
@@ -94,14 +93,12 @@ class BooleanIndicator(style.Frame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        # Only create the label if text is given.
         self.label = None
         if text:
             self.label = style.Label(self, style=(label_style or kwargs.get("style")), text=text)
             self.label.grid()
 
         if mutable:
-            # If the indicator is to be mutable, bind click events on the frame (and the label, if it was created).
             self.bind("<Button-1>", self._on_click)
             if self.label:
                 self.label.bind("<Button-1>", self._on_click)
@@ -128,9 +125,9 @@ class BooleanIndicator(style.Frame):
 
     def _on_change(self, *_):
         """
-        Internal method used as the callback for write events on ``BooleanIndicator.var``if the indicator is mutable.
+        Internal method used as the callback for write events on ``BooleanIndicator.var``. This changes the colour of
+        the frame (and, if it exists, the label) according to the new state of the variable.
         """
-        # Change the colour of the frame (and, if it exists, the label) according to the new state of the indicator.
         colour = self.on_colour if self.value else self.off_colour
         self.configure(bg=colour)
         if self.label:
@@ -145,7 +142,6 @@ class BooleanIndicator(style.Frame):
 
 
 class DockableBooleanIndicator(DockableMixin, BooleanIndicator):
-    """Dockable version of ``BooleanIndicator``."""
 
     def __init__(self, master, width=1, height=1, *args, **kwargs):
         """
@@ -158,29 +154,28 @@ class DockableBooleanIndicator(DockableMixin, BooleanIndicator):
         :param kwargs: Additional kwargs for the ``BooleanIndicator`` constructor.
         """
         super().__init__(master, width, height, *args, **kwargs)
-        # If a label was given for the indicator, assure that it relays bind events to the DockableMixin.
+        # If a label was given for the indicator, assure that it relays drag events to the DockableMixin.
         if self.label:
             self.bind_drag_on(self.label)
 
 
 class LabelledText(style.Frame):
     """
-    A simple widget for displaying a single piece of titled, alphanumeric data. By default the title label is packed
-    above the data label, but they may be redrawn to support a different layout style (as is done in
-    ``LabelledTextBank``).
+    A simple widget for displaying a single piece of titled, alphanumeric data. The title label is packed above the data
+    label.
     """
 
     def __init__(self, master, title, text="", title_style=None, text_style=None, *args, **kwargs):
         """
         :param master: The master tkinter widget.
-        :param title: The title.
+        :param title: The title of the data.
         :type title: str
         :param text: The initial text for the widget.
         :type text: str
         :param title_style: The style for the title label. Defaults to the style given for the frame (in kwargs).
-        :type title_style: Style
+        :type title_style: spookyconsole.gui.style.Style
         :param text_style: The style for the text label. Defaults to the style given for the frame (in kwargs).
-        :type text_style: Style
+        :type text_style: spookyconsole.gui.style.Style
         :param args: Additional args for the ``style.Frame`` constructor.
         :param kwargs: Additional kwargs for the ``style.Frame`` constructor.
         """
@@ -230,7 +225,6 @@ class LabelledText(style.Frame):
 
 
 class DockableLabelledText(DockableMixin, LabelledText):
-    """Dockable version of ``LabelledText``."""
 
     def __init__(self, master, title, text="", width=1, height=1, *args, **kwargs):
         super().__init__(master, width, height, title, text, *args, **kwargs)
@@ -289,19 +283,17 @@ class BankBase(style.Frame):
 
         :param widget: The widget to remove.
         """
-        widget.destroy()
         self.widgets.remove(widget)
+        widget.destroy()
 
 
 class BooleanIndicatorBank(BankBase):
-    """``BooleanIndicator`` version of ``BankBase``."""
 
     def __init__(self, master, *args, **kwargs):
         super().__init__(master, BooleanIndicator, *args, **kwargs)
 
 
 class DockableBooleanIndicatorBank(DockableMixin, BooleanIndicatorBank):
-    """Dockable version of ``BooleanIndicatorBank``."""
 
     def __init__(self, master, width=2, height=3, *args, **kwargs):
         super().__init__(master, width, height, *args, **kwargs)
@@ -316,12 +308,6 @@ class DockableBooleanIndicatorBank(DockableMixin, BooleanIndicatorBank):
 
 
 class LabelledTextBank(BankBase):
-    """
-    ``LabelledText`` version of ``BankBase``.
-
-    The ``LabelledText.title_label`` and ``LabelledText.text_label`` labels are repacked in ``LabelledTextBank.add`` to
-    be in a horizontal layout.
-    """
 
     def __init__(self, master, *args, **kwargs):
         super().__init__(master, LabelledText, *args, **kwargs)
@@ -335,7 +321,6 @@ class LabelledTextBank(BankBase):
 
 
 class DockableLabelledTextBank(DockableMixin, LabelledTextBank):
-    """Dockable version of ``LabelledTextBank``."""
 
     def __init__(self, master, width=2, height=3, *args, **kwargs):
         super().__init__(master, width, height, *args, **kwargs)
@@ -370,7 +355,7 @@ class Gyro(style.Canvas):
         :param circ_pad: How much padding (in pixels) to add around the circle.
         :type circ_pad: int
         :param auto_resize: Whether or not to automatically resize the circle and pointer when the gyro is allocated
-        more screen space
+        more screen space.
         :type auto_resize: bool
         :param circ_opts: Visual options to use when creating the circle via ``Gyro.create_circle``.
         :type circ_opts: dict
@@ -407,11 +392,11 @@ class Gyro(style.Canvas):
         self._radians = 0
         self._radius = None
         if auto_resize:
-            # This will be called at least once when this widget is initially drawn, thus the radius needn't be manually
-            # initialized.
+            # _on_configure will be called at least once when this widget is initially drawn, thus the radius needn't be
+            # manually initialized.
             self.bind("<Configure>", self._on_configure)
         else:
-            # Force an update by manually setting the radius.
+            # Force an update by setting the radius property.
             self.radius = radius
 
     @property
@@ -450,7 +435,7 @@ class Gyro(style.Canvas):
     @property
     def radius(self):
         """
-        :return: The radius of the gyro.
+        :return: The radius of the gyro in pixels.
         :rtype: int
         """
         return self._radius
@@ -468,8 +453,10 @@ class Gyro(style.Canvas):
 
     def update_pointer(self):
         """Move the pointer to reflect a change made to ``Gyro.pointer_frac`` or the radius."""
-        x = -self.pointer_frac * self.radius * math.cos(self._radians + math.pi / 2)
-        y = -self.pointer_frac * self.radius * math.sin(self._radians + math.pi / 2)
+        pointer_length = -self.pointer_frac * self.radius
+        # Add pi/2 to the angle because we consider 0 radians to be pi/2 in standard position.
+        x = pointer_length * math.cos(self._radians + math.pi / 2)
+        y = pointer_length * math.sin(self._radians + math.pi / 2)
         self.coords(self.pointer, 0, 0, x, y)
 
     def update_scroll_region(self):
@@ -522,7 +509,6 @@ class Gyro(style.Canvas):
 
 
 class DockableGyro(DockableMixin, Gyro):
-    """Dockable version of ``Gyro``."""
     pass
 
 
@@ -546,9 +532,9 @@ class NTBrowser(style.Frame):
     subtable is selected or if multiple entries with varying types are selected), the tkentry will be disabled. An error
     popup window will appear if the given data string in the tkentry cannot be converted to the entry's type.
 
-    To navigate to a subtable, double-click it in the listboxes. The parent table of the currently displayed table can
-    be returned to by double clicking the top row in the listboxes, which is by default labelled ".." (although this can
-    be changed by setting ``NTBrowser.PARENT_DIR``).
+    To navigate to a subtable, double-click it in the key listbox. The parent table of the currently displayed table can
+    be returned to by double clicking the top row in the key listbox, which is by default labelled ".." (although this
+    can be changed by setting ``NTBrowser.PARENT_DIR``).
 
     Double-clicking on an entry in the listboxes will cause a resizable popup window to appear with the entry's type and
     value in it. (This is mainly so that entries with long data strings can be viewed in full).
@@ -602,19 +588,18 @@ class NTBrowser(style.Frame):
         :type listbox_style: spookyconsole.gui.style.Style
         :param header_style: The style for the listbox headers. Defaults to the style given for the frame (in kwargs).
         :type header_style: spookyconsole.gui.style.Style
-        :param label_style: The style for the entry label. Defaults to the style given for the frame (in kwargs).
+        :param label_style: The style for the tk entry label. Defaults to the style given for the frame (in kwargs).
         :type label_style: spookyconsole.gui.style.Style
-        :param entry_style: The style for the entry. Defaults to the style given for the frame (in kwargs).
+        :param entry_style: The style for the tk entry. Defaults to the style given for the frame (in kwargs).
         :type entry_style: spookyconsole.gui.style.Style
         :param button_style: The style for the button. Defaults to the style given for the frame (in kwargs).
         :type button_style: spookyconsole.gui.style.Style
-        :param info_text_style: The style for the info popup text widget. Defaults to the style given for the frame (in
+        :param info_text_style: The style for the info popup Text widget. Defaults to the style given for the frame (in
         kwargs).
         :type info_text_style: spookyconsole.gui.style.Style
         :param args: Additional args for the ``spookyconsole.gui.style.Frame`` constructor.
         :param kwargs: Additional kwargs for the ``spookyconsole.gui.style.Frame`` constructor.
         """
-        # Assure all the subwidget styles default to the frame style (which may itself be undefined).
         def_style = kwargs.get("style")
         scrollbar_style = scrollbar_style or def_style
         listbox_style = listbox_style or def_style
@@ -664,7 +649,7 @@ class NTBrowser(style.Frame):
         self._button_style = button_style
         self._info_text_style = info_text_style or def_style
 
-        # Construct the "upper" subwidgets.
+        # Construct all the subwidgets.
         self.scrollbar = style.Scrollbar(self, style=scrollbar_style, command=self._merged_yview)
         self.key_label = style.Label(self, style=header_style, text="KEY")
         self.key_listbox = style.Listbox(self, style=listbox_style, selectmode=tk.EXTENDED,
@@ -672,8 +657,6 @@ class NTBrowser(style.Frame):
         self.value_label = style.Label(self, style=header_style, text="VALUE")
         self.value_listbox = style.Listbox(self, style=listbox_style, selectmode=tk.EXTENDED,
                                            yscrollcommand=self.scrollbar.set)
-
-        # Construct the "lower" subwidgets.
         self.lower_frame = style.Frame(self, style=def_style)
         self.insert_label = style.Label(self.lower_frame, style=label_style, text="INSERT:")
         self.insert_entry = style.Entry(self.lower_frame, style=entry_style, state=tk.DISABLED)
@@ -690,30 +673,25 @@ class NTBrowser(style.Frame):
         # Make only the entry resizable in the lower frame.
         self.lower_frame.grid_columnconfigure(1, weight=1)
 
-        # Grid the "upper" subwidgets.
+        # Grid all the subwidgets.
         self.key_label.grid(row=0, column=0, sticky=tk.NSEW)
         self.value_label.grid(row=0, column=1, sticky=tk.NSEW)
         self.key_listbox.grid(row=1, column=0, sticky=tk.NSEW)
         self.value_listbox.grid(row=1, column=1, sticky=tk.NSEW)
         self.scrollbar.grid(row=1, column=2, sticky=tk.NS)
-
-        # Grid the "lower" subwidgets.
         self.insert_label.grid(row=0, column=0, sticky=tk.NSEW)
         self.insert_entry.grid(row=0, column=1, sticky=tk.NSEW)
         self.insert_button.grid(row=0, column=2, sticky=tk.NSEW)
         self.reload_button.grid(row=0, column=3, sticky=tk.NSEW)
         self.lower_frame.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW)
 
-        # Bind scroll events on the listboxes.
+        # Bind events on subwidgets.
         self.key_listbox.bind("<MouseWheel>", self._wheel_scroll)
         self.value_listbox.bind("<MouseWheel>", self._wheel_scroll)
-        # Bind double-click events on the listboxes.
         self.key_listbox.bind("<Double-Button-1>", self._key_double_click_callback)
         self.value_listbox.bind("<Double-Button-1>", self._value_double_click_callback)
-        # Bind select events on the listboxes.
         self.key_listbox.bind("<<ListboxSelect>>", self._listbox_select_callback)
         self.value_listbox.bind("<<ListboxSelect>>", self._listbox_select_callback)
-        # Bind the return key on the entry.
         self.insert_entry.bind("<Return>", self._insert_callback)
 
         # Initialize the table by populating it with the root table.
@@ -758,13 +736,13 @@ class NTBrowser(style.Frame):
 
         lower_scroll, upper_scroll = self.scrollbar.get()
         # Only make any changes to _curr_scroll_row if the given scroll event would actually make any change to the
-        # listboxs (i.e. if we're not at the top of the listboxes and scrolling up or at the bottom of the listboxes and
-        # scrolling down).
+        # listboxs (i.e. if we're not at the top of the listboxes and scrolling up nor at the bottom of the listboxes
+        # and scrolling down).
         if (lower_scroll != 0 and event.delta > 0) or (upper_scroll != 1 and event.delta < 0):
             # Increment or decrement _curr_scroll_row according to the direction of the scroll event.
             self._curr_scroll_row += int(math.copysign(1, -event.delta))
-            # diff is the difference in rows between the "ahead" listbox and the "behind" one. It always (strangely) has
-            # magnitude 4.
+            # diff is the difference in rows between the "ahead" listbox and the "behind" one. It always (seemingly
+            # arbitrarily) has magnitude 4.
             diff = int(math.copysign(4, -event.delta))
             # Set the yviews of the listboxes, adding the difference to the correct one.
             self.key_listbox.yview(self._curr_scroll_row + (diff if self.key_listbox is not event.widget else 0))
@@ -778,19 +756,14 @@ class NTBrowser(style.Frame):
         if len(self._curr_indices) != 1:
             return  # TODO: Some sort of warning or error
         idx = self._curr_indices[0]
-        if self.key_listbox.get(idx) == self.PARENT_DIR:
-            # If the selected row in the listbox was the parent table, pop the current table from the hierarchy and
-            # populate the listboxes with the parent directory.
+        if self.key_listbox.get(idx) == self.PARENT_DIR:  # If the selected row is the parent table.
             self.hierarchy.pop()
             self._populate(self.hierarchy[-1])
-        elif idx <= self._last_table_idx:
-            # If the selected row in the listbox is a subtable of the current table, add it to the hierarchy and
-            # populate the listboxes with that table.
+        elif idx <= self._last_table_idx:  # If the selected row is any other table.
             table = self._items[idx]
             self.hierarchy.append(table)
             self._populate(table)
-        else:
-            # Otherwise, the selected row in the listbox must be an entry, so display the entry info popup window.
+        else:  # If the selected row is an entry.
             self._create_entry_popup(idx)
 
     def _value_double_click_callback(self, _):
@@ -833,7 +806,8 @@ class NTBrowser(style.Frame):
         data.configure(state=tk.DISABLED)
         data.grid(row=1, column=1, sticky=tk.NSEW)
 
-        # Forcefully close an already-open popup window, should one exists.
+        # Forcefully close an already-open popup window, should one exists. PopupManager prevents having more than one
+        # popup open at once and queues any subsequent popups, which would be weird in this case.
         if self._entry_popup.popup_open:
             self._entry_popup.close_current_popup()
 
@@ -849,7 +823,7 @@ class NTBrowser(style.Frame):
         :param table: The networktable to populate the listboxes with.
         :type table: networktables.networktable.NetworkTable
         """
-        # Repopulating the listboxes will reset the scroll...
+        # Repopulating the listboxes will reset the scroll.
         self._curr_scroll_row = 0
         # Repopulating the listboxes will reset the selection, so make sure the entry defaults to disabled.
         self._disable_entry()
@@ -904,7 +878,7 @@ class NTBrowser(style.Frame):
             self.reload()
         except ValueError as e:
             # If an error occurred while trying to cast the given string to the type expected by the selected entries,
-            # create a popup window indicating the user of the error.
+            # create a popup window telling the user of the error.
             popup.dialog("Type Error", "Error: {}".format(str(e)), popup.BUTTONS_OK,
                          frame_style=self._style, message_style=self._label_style, button_style=self._button_style)
 
@@ -933,7 +907,7 @@ class NTBrowser(style.Frame):
                     break
                 if kind is None:
                     kind = self._items[idx].getType()
-                # If any two entries in the selection disagree in type, break.
+                # If any two entries in the selection disagree in type, break (and, hence, disable the entry).
                 elif self._items[idx].getType() != kind:
                     break
             else:
@@ -944,7 +918,6 @@ class NTBrowser(style.Frame):
 
 
 class DockableNTBrowser(DockableMixin, NTBrowser):
-    """Dockable version of ``NTBrowser``."""
 
     def __init__(self, master, table, width=5, height=5, *args, **kwargs):
         super().__init__(master, width, height, table, *args, **kwargs)
