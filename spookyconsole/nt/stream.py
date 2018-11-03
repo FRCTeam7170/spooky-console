@@ -1,4 +1,6 @@
 
+"""Contains the ``NTStream`` class, an  implementation of the spooky-console stream protocol."""
+
 from collections import deque, namedtuple
 import typing
 from networktables.instance import NetworkTablesInstance

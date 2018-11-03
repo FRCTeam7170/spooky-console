@@ -1,4 +1,6 @@
 
+"""Contains the ``NTSimulation`` class for launching Network Tables servers for testing purposes."""
+
 import random
 import string
 from itertools import count

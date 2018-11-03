@@ -1,7 +1,7 @@
 
 """
-Extra tkinter widgets for the GUI component of spooky-console. Namely, dockable versions of all the builtin tkinter
-widgets are provided here along with more specific widgets.
+Contains extra tkinter widgets for the GUI component of spooky-console. Namely, dockable versions of all the builtin
+tkinter widgets are provided here along with more specific widgets.
 """
 
 import tkinter as tk

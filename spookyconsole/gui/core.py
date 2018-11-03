@@ -1,7 +1,5 @@
 
-"""
-Core functionality for the GUI component of spooky-console.
-"""
+"""Contains core functionality for the GUI component of spooky-console."""
 
 import tkinter as tk
 import numpy as np
