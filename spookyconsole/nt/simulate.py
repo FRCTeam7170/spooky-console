@@ -74,6 +74,8 @@ class NTSimulation:
     def serve_boolean(self, table=None, key=None, value=None,
                       interval=0, listen=False):
         """
+        Serve an entry of boolean type.
+
         :param table: The table to put the entry in as a string or a ``networktables.networktable.NetworkTable``.
         Passing in None means to use the default table.
         :type table: str | networktables.networktable.NetworkTable
@@ -94,6 +96,8 @@ class NTSimulation:
     def serve_double(self, table=None, key=None, value=None,
                      lower=0, upper=10, interval=0, listen=False):
         """
+        Serve an entry of double type.
+
         :param table: The table to put the entry in as a string or a ``networktables.networktable.NetworkTable``.
         Passing in None means to use the default table.
         :type table: str | networktables.networktable.NetworkTable
@@ -118,6 +122,8 @@ class NTSimulation:
     def serve_string(self, table=None, key=None, value=None,
                      length=5, interval=0, listen=False):
         """
+        Serve an entry of string type.
+
         :param table: The table to put the entry in as a string or a ``networktables.networktable.NetworkTable``.
         Passing in None means to use the default table.
         :type table: str | networktables.networktable.NetworkTable
@@ -140,6 +146,8 @@ class NTSimulation:
     def serve_boolean_array(self, table=None, key=None, value=None,
                             length=10, interval=0, listen=False):
         """
+        Serve an entry of boolean array type.
+
         :param table: The table to put the entry in as a string or a ``networktables.networktable.NetworkTable``.
         Passing in None means to use the default table.
         :type table: str | networktables.networktable.NetworkTable
@@ -162,6 +170,8 @@ class NTSimulation:
     def serve_double_array(self, table=None, key=None, value=None,
                            length=10, lower=0, upper=10, interval=0, listen=False):
         """
+        Serve an entry of double array type.
+
         :param table: The table to put the entry in as a string or a ``networktables.networktable.NetworkTable``.
         Passing in None means to use the default table.
         :type table: str | networktables.networktable.NetworkTable
@@ -188,6 +198,8 @@ class NTSimulation:
     def serve_string_array(self, table=None, key=None, value=None,
                            length=10, str_length=5, interval=0, listen=False):
         """
+        Serve an entry of string array type.
+
         :param table: The table to put the entry in as a string or a ``networktables.networktable.NetworkTable``.
         Passing in None means to use the default table.
         :type table: str | networktables.networktable.NetworkTable
@@ -212,6 +224,8 @@ class NTSimulation:
     def serve_boolean_stream(self, table=None, receive=True, transmit=True, cache_size=100,
                              length=10, transmit_type=0, listen=False):
         """
+        Serve an entry of boolean stream type.
+
         :param table: The table to put the stream in as a string or a ``networktables.networktable.NetworkTable``.
         Passing in None means to use the default table.
         :type table: str | networktables.networktable.NetworkTable
@@ -241,6 +255,8 @@ class NTSimulation:
     def serve_double_stream(self, table=None, receive=True, transmit=True, cache_size=100,
                             length=10, lower=0, upper=10, transmit_type=0, listen=False):
         """
+        Serve an entry of double stream type.
+
         :param table: The table to put the stream in as a string or a ``networktables.networktable.NetworkTable``.
         Passing in None means to use the default table.
         :type table: str | networktables.networktable.NetworkTable
@@ -274,6 +290,8 @@ class NTSimulation:
     def serve_string_stream(self, table=None, receive=True, transmit=True, cache_size=100,
                             length=10, str_length=5, transmit_type=0, listen=False):
         """
+        Serve an entry of string stream type.
+
         :param table: The table to put the stream in as a string or a ``networktables.networktable.NetworkTable``.
         Passing in None means to use the default table.
         :type table: str | networktables.networktable.NetworkTable
