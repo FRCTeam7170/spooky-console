@@ -30,20 +30,20 @@ def temp():
 gui = core.GuiManager("Plot Tests")
 style.init_fonts(gui.root)
 popup.init_global_pm(gui.root)
-my_style = style.Style(bg=style.GRAY_SCALE_4, fg=style.GRAY_SCALE_E, font="FONT_SERIF_NORMAL",
-                       activebackground=style.GRAY_SCALE_4, selectcolor=style.GRAY_SCALE_4)
-plot.init_mpl_rcparams(my_style)
-win = gui.new_win(18, 18, style=my_style)
+# my_style = style.Style(bg=style.GRAY_SCALE_4, fg=style.GRAY_SCALE_E, font="FONT_SERIF_NORMAL",
+#                        activebackground=style.GRAY_SCALE_4, selectcolor=style.GRAY_SCALE_4)
+# plot.init_mpl_rcparams(my_style)
+win, _ = gui.new_win(18, 18)  # , style=my_style)
 win.protocol("WM_DELETE_WINDOW", gui.root.destroy)
 win.grid.set_resize_protocol(core.Grid.RESIZE_PROTO_EXPAND_CELLS)
 
 from networktables.instance import NetworkTablesInstance
 inst = NetworkTablesInstance.create()
-inst.startClient(("localhost", 1735))
-ntb = widgets.DockableNTBrowser(win.grid, inst.getTable("/stuff"), style=my_style)
+inst.startClient(("172.22.11.2", 1735))
+ntb = widgets.DockableNTBrowser(win.grid, inst.getTable("/"))  # , style=my_style)
 ntb.reload_when_connected(inst)
 win.grid.register_dockable(ntb)
-gui.root.after(500, temp)
+# gui.root.after(500, temp)
 
 """
 p1 = plot.DockablePlot(win.grid, style=my_style)

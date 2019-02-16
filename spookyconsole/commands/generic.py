@@ -4,7 +4,7 @@ TODO
 """
 
 import click
-from ..exceptions import AbortPromptLoop
+from spookyconsole.exceptions import AbortPromptLoop
 
 
 quit_aliases = ["exit"]
@@ -12,7 +12,5 @@ quit_aliases = ["exit"]
 
 @click.command("quit")
 def quit_():
-    """
-    Exit the prompt loop.
-    """
+    """Exit the prompt loop."""
     raise AbortPromptLoop

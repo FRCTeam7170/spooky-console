@@ -1307,7 +1307,7 @@ class GuiManager:
         num = self._get_next_win_num()
         win.title(self.prog_name + " ({})".format(num))
         self.windows[num] = win
-        return win
+        return win, num
 
     def _get_next_win_num(self):
         """

@@ -5,7 +5,6 @@ TODO
 
 import click
 import pycmds
-from pycmds.utils import DotDict
 from networktables.instance import NetworkTablesInstance
 from networktables.networktables import NetworkTables
 
@@ -14,11 +13,6 @@ TRUE = ["true", "t"]
 FALSE = ["false", "f"]
 BOOLEAN_CONV_FAIL_MSG = "cannot convert {!r} to boolean"
 DOUBLE_CONV_FAIL_MSG = "cannot convert {!r} to double"
-
-
-def assure_ntpath_exists(ctx):
-    if isinstance(ctx.obj, DotDict) and "nt_current_path" not in ctx.obj:
-        ctx.obj["nt_current_path"] = "/"
 
 
 def str_to_bool(string):
@@ -59,11 +53,11 @@ def type_cast(value, kind, ctx=None):
             return value
         elif kind == NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY:
             # TODO: manual invocation of convert seems a little hacky...
-            return BOOLEAN_ARRAY.convert(value, None, ctx)
+            return BOOLEAN_ARRAY_TYPE.convert(value, None, ctx)
         elif kind == NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY:
-            return DOUBLE_ARRAY.convert(value, None, ctx)
+            return DOUBLE_ARRAY_TYPE.convert(value, None, ctx)
         else:  # kind == NetworkTablesInstance.EntryTypes.STRING_ARRAY
-            return STRING_ARRAY.convert(value, None, ctx)
+            return STRING_ARRAY_TYPE.convert(value, None, ctx)
     except click.BadParameter as e:
         raise ValueError(e)
 
@@ -105,17 +99,18 @@ class NTPath:
         if self.is_absolute:
             ret = ""
         else:
-            ret = ctx.obj["nt_current_path"]
-            ret += NetworkTables.PATH_SEPARATOR if not ret.endswith(NetworkTables.PATH_SEPARATOR) else ""
+            ret = ctx.obj.nt_path
+            if not ret.endswith(NetworkTables.PATH_SEPARATOR):
+                ret += NetworkTables.PATH_SEPARATOR
         for component in self.path.split(NetworkTables.PATH_SEPARATOR):
             if component == self.CURR_DIR:
                 continue
             elif component == self.PREV_DIR:
                 if ret != "/":
-                    ret = ret[len(ret) - ret[-2::-1].index(NetworkTables.PATH_SEPARATOR) - 1]
+                    ret = ret[:(len(ret) - ret[-2::-1].index(NetworkTables.PATH_SEPARATOR) - 1)]
             else:
                 ret += component + NetworkTables.PATH_SEPARATOR
-        return ret
+        return ret[:-1] if ret.endswith(NetworkTables.PATH_SEPARATOR) else ret
 
     @staticmethod
     def assert_valid_name(name):
@@ -126,7 +121,6 @@ class NTPath:
 class NTPathParamType(click.ParamType):
 
     def convert(self, value, param, ctx):
-        assure_ntpath_exists(ctx)
         try:
             return NTPath(value).resolve_full_name(ctx)
         except ValueError as e:
@@ -163,10 +157,10 @@ class DoubleArrayParamType(pycmds.ListParamType):
             self.fail(DOUBLE_CONV_FAIL_MSG.format(item))
 
 
-BOOLEAN_ARRAY = BooleanArrayParamType("[]")
-DOUBLE_ARRAY = DoubleArrayParamType("[]")
-STRING_ARRAY = pycmds.LIST
+BOOLEAN_ARRAY_TYPE = BooleanArrayParamType("[]")
+DOUBLE_ARRAY_TYPE = DoubleArrayParamType("[]")
+STRING_ARRAY_TYPE = pycmds.LIST
 
-NT_PATH = NTPathParamType()
-NT_ENTRY = NTEntryParamType()
-NT_TABLE = NTTableParamType()
+NT_PATH_TYPE = NTPathParamType()
+NT_ENTRY_TYPE = NTEntryParamType()
+NT_TABLE_TYPE = NTTableParamType()

@@ -5,20 +5,21 @@ TODO
 
 from collections import namedtuple
 import click
+import pycmds
 from networktables.networktables import NetworkTables
 from networktables.instance import NetworkTablesInstance
 import tabulate
 from spookyconsole.nt import ntutils
 
 
-@click.group()
+@click.group(cls=pycmds.AliasGroup)
 @click.pass_context
 def nt(ctx):
-    ntutils.assure_ntpath_exists(ctx)
+    ctx.obj.setdefault("nt_path", "/")
 
 
 @click.command()
-@click.argument("entry", type=ntutils.NT_ENTRY)
+@click.argument("entry", type=ntutils.NT_ENTRY_TYPE)
 def get(entry):
     return entry.value
 
@@ -30,24 +31,25 @@ def get(entry):
 @click.option("kind", "--boolean-array", flag_value=NetworkTablesInstance.EntryTypes.BOOLEAN_ARRAY)
 @click.option("kind", "--double-array", flag_value=NetworkTablesInstance.EntryTypes.DOUBLE_ARRAY)
 @click.option("kind", "--string-array", flag_value=NetworkTablesInstance.EntryTypes.STRING_ARRAY)
-@click.argument("entry", type=ntutils.NT_ENTRY)
+@click.argument("entry", type=ntutils.NT_ENTRY_TYPE)
 @click.argument("value")
 @click.pass_context
 def set_(ctx, entry, value, kind):
+    print(f"entry: {entry},{type(entry)}; value: {repr(value)},{type(value)}; kind: {kind},{type(kind)}")
     return ntutils.set_entry_by_type(entry, ntutils.type_cast(value, kind, ctx))
 
 
 @click.command()
-@click.argument("path", type=ntutils.NT_PATH)
+@click.argument("path", type=ntutils.NT_PATH_TYPE)
 @click.pass_context
 def cd(ctx, path):
-    ctx.obj["nt_current_path"] = path
+    ctx.obj.nt_path = path
 
 
 @click.command()
 @click.pass_context
 def pwd(ctx):
-    return ctx.obj["nt_current_path"]
+    return ctx.obj.nt_path
 
 
 ListElement = namedtuple("ListElement", ("is_entry", "key", "parent"))
@@ -55,7 +57,7 @@ list_aliases = ["ls", "dir"]
 
 
 @click.command("list")
-@click.argument("path", type=ntutils.NT_PATH, required=False)
+@click.argument("path", type=ntutils.NT_PATH_TYPE, required=False)
 @click.option("recurse", "--recurse/--no-recurse", "-r/ ", default=False)
 @click.option("output", "--tables", "-t", flag_value="tables")
 @click.option("output", "--entries", "-e", flag_value="entries")
@@ -64,11 +66,8 @@ list_aliases = ["ls", "dir"]
 @click.option("kind", "--type/--no-type", "-T/ ", default=False)
 @click.pass_context
 def list_(ctx, path, recurse, output, value, kind):
-
     if path is None:
-        path = ctx.obj["nt_current_path"]
-    else:
-        path = ntutils.NTPath(path).resolve_full_name(ctx)
+        path = ctx.obj.nt_path
 
     find_entries = output in ("entries", "both")
     find_tables = output in ("tables", "both")
@@ -121,5 +120,14 @@ def list_(ctx, path, recurse, output, value, kind):
 
 
 @click.command()
-def monitor():
-    pass
+@click.option("team", "--team", "-t", default=False)
+@click.argument("server")
+@click.pass_context
+def connect(ctx, team, server):
+    if team:
+        try:
+            NetworkTables.startClientTeam(int(server))
+        except ValueError:
+            raise click.BadParameter("could not convert given server into a team number", ctx, "server")
+    else:
+        NetworkTables.startClient(server)

@@ -12,16 +12,14 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from spookyconsole.exceptions import AbortPromptLoop
 
 
-PROG_NAME = "spooky-console"
-PROMPT = "> "
-
-
 class Application:
 
-    def __init__(self, root_cmd):
-        self.commander = pycmds.Commander(root_cmd, name=PROG_NAME, suppress_aborts=True)
-        self.prompt_session = pt.PromptSession(message=PROMPT,
-                                               completer=pycmds.CmdCompleter(root_cmd, prog_name=PROG_NAME))
+    def __init__(self, root_cmd, prog_name, prompt=">", gui_interval=20):
+        self.commander = pycmds.Commander(root_cmd, name=prog_name, suppress_aborts=True)
+        self.prompt_session = pt.PromptSession(message=prompt,
+                                               completer=pycmds.CmdCompleter(root_cmd, prog_name=prog_name))
+        self.commander.obj.prog_name = prog_name
+        self.commander.obj.gui_interval = gui_interval
 
     async def loop(self):
         try:
@@ -37,12 +35,6 @@ class Application:
 @click.group(cls=pycmds.AliasGroup)
 def cli():
     pass
-
-
-@cli.command()
-@click.option("opt", "--opt")
-def other(opt):
-    return "modified:{}".format(opt)
 
 
 def print_banner():
@@ -68,22 +60,24 @@ def print_banner():
         print(Style.RESET_ALL)
 
 
-async def my_coroutine():
-    for i in range(15):
-        await asyncio.sleep(1)
-        print(i)
-
-
 async def main():
     from spookyconsole.commands.generic import quit_, quit_aliases
+    from spookyconsole.commands.networktables import nt, get, set_, cd, list_, list_aliases, pwd
     cli.add_command(quit_, aliases=quit_aliases)
-    app = Application(cli)
+    cli.add_command(nt)
+    nt.add_command(get)
+    nt.add_command(set_)
+    nt.add_command(cd)
+    nt.add_command(list_, aliases=list_aliases)
+    nt.add_command(pwd)
+    app = Application(cli, "spooky-console")
     print_banner()
     with patch_stdout():
-        await asyncio.gather(app.loop(), my_coroutine())
+        await app.loop()
 
 
 if __name__ == '__main__':
+
     use_asyncio_event_loop()
     # use_asyncio_event_loop creates a new event loop, so we mustn't use asyncio.run
     asyncio.get_event_loop().run_until_complete(main())

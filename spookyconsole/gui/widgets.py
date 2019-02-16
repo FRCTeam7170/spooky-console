@@ -1006,7 +1006,6 @@ class DockableNTBrowser(DockableMixin, NTBrowser):
 # TODO: Power info display
 # TODO: Log output?
 # TODO: Camera?
-# TODO: start working on complementary code in spooky-lib
 # TODO: start writing actual click command code to interface with gui
 # TODO: analysis tools for recorded msgpack data?
 # TODO: args coming after a long chain of pos args with default vals
